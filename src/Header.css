@@ -1,0 +1,63 @@
+/* src/Header.css */
+
+header {
+    background-color: #ffa500; /* Orange background */
+    color: #fff; /* White font color */
+    padding: 1em 2em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 1.5em;
+    font-weight: 700;
+}
+
+nav ul {
+    list-style-type: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+nav ul li {
+    margin: 0 1em;
+}
+
+nav ul li a {
+    color: #fff;
+    text-decoration: none;
+    padding: 0.5em 1em;
+    transition: background-color 0.3s ease;
+}
+
+nav ul li a:hover {
+    background-color: #ff8c00; /* Darker orange on hover */
+    border-radius: 5px;
+}
+
+.search-form {
+    display: flex;
+    align-items: center;
+}
+
+.search-input {
+    padding: 0.5em;
+    border: none;
+    border-radius: 5px 0 0 5px;
+}
+
+.search-button {
+    padding: 0.5em;
+    background-color: #ff8c00;
+    border: none;
+    border-radius: 0 5px 5px 0;
+    cursor: pointer;
+    color: #fff;
+    transition: background-color 0.3s ease;
+}
+
+.search-button:hover {
+    background-color: #ff6f00; /* Darker orange on hover */
+}
