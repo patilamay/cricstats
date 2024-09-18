@@ -1,40 +1,55 @@
 /* src/Header.css */
 
 header {
-    background-color: #ffa500; /* Orange background */
-    color: #fff; /* White font color */
+    background-color: #ffffff; 
+    color: #000000; 
     padding: 1em 2em;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    transition: background-color 0.3s ease;
+}
+
+header.sticky {
+    background-color: #e2e2e2; 
 }
 
 .logo {
-    font-size: 1.5em;
+    font-size: 1.8em;
     font-weight: 700;
+    letter-spacing: 0.05em;
+    color: goldenrod; 
+    text-transform: uppercase;
 }
 
 nav ul {
     list-style-type: none;
-    padding: 0;
     display: flex;
-    align-items: center;
+    margin: 0;
+    padding: 0;
 }
 
 nav ul li {
-    margin: 0 1em;
+    margin: 0 1.5em;
 }
 
 nav ul li a {
-    color: #fff;
+    color: black;
     text-decoration: none;
+    font-size: 1.1em;
     padding: 0.5em 1em;
-    transition: background-color 0.3s ease;
+    border-radius: none;
+    transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
 nav ul li a:hover {
-    background-color: #ff8c00; /* Darker orange on hover */
-    border-radius: 5px;
+    background-color: #e2e2e2; 
+    transform: scale(1.05); /* Slight pop-out on hover */
 }
 
 .search-form {
@@ -43,21 +58,39 @@ nav ul li a:hover {
 }
 
 .search-input {
-    padding: 0.5em;
+    padding: 0.6em;
     border: none;
-    border-radius: 5px 0 0 5px;
+    border-radius: none;
+    font-size: 1em;
+    width: 200px;
 }
 
 .search-button {
-    padding: 0.5em;
-    background-color: #ff8c00;
+    padding: 0.6em;
+    background-color: #e2e2e2;
     border: none;
-    border-radius: 0 5px 5px 0;
+    border-radius: none;
     cursor: pointer;
-    color: #fff;
+    color: black;
+    font-size: 1em;
     transition: background-color 0.3s ease;
 }
 
 .search-button:hover {
-    background-color: #ff6f00; /* Darker orange on hover */
+    background-color: #e2e2e2; 
+}
+
+@media (max-width: 768px) {
+    nav ul {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    nav ul li {
+        margin: 0.5em 0;
+    }
+
+    .search-input {
+        width: 100px;
+    }
 }

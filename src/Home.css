@@ -1,0 +1,77 @@
+/* src/Home.css */
+
+.home-section {
+    padding: 4em 2em;
+    text-align: center;
+    background-color: #f4f4f4;
+    min-height: 100vh;
+    margin-top: 4em; /* Padding for the fixed header */
+}
+
+.home-title {
+    font-size: 2.5em;
+    margin-bottom: 1em;
+    color: #1e3a8a;
+}
+
+.home-subtitle {
+    font-size: 1.2em;
+    color: #333;
+    margin-bottom: 1.5em;
+}
+
+.section-title {
+    font-size: 2em;
+    margin: 2em 0 1em;
+    color: #2563eb; /* Matches the hover color of the nav links */
+    border-bottom: 2px solid #2563eb;
+    display: inline-block;
+    padding-bottom: 0.3em;
+}
+
+.record-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2em;
+    margin-bottom: 2em;
+}
+
+.record-card {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 2em;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.record-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.record-card h4 {
+    font-size: 1.3em;
+    margin-bottom: 0.5em;
+    color: #1e3a8a;
+}
+
+.record-card p {
+    font-size: 1em;
+    color: #666;
+    margin: 0.3em 0;
+}
+
+@media (max-width: 768px) {
+    .home-title {
+        font-size: 2em;
+    }
+
+    .section-title {
+        font-size: 1.8em;
+    }
+
+    .record-card h4 {
+        font-size: 1.1em;
+    }
+}

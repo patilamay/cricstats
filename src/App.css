@@ -5,6 +5,7 @@ body {
   margin: 0;
   padding: 0;
   background-color: #f4f4f4;
+  color: #333;
 }
 
 main {
@@ -13,4 +14,46 @@ main {
 
 section {
   margin-bottom: 2em;
+}
+
+h2 {
+  font-size: 2em;
+  margin-bottom: 0.5em;
+}
+
+h3 {
+  font-size: 1.5em;
+  margin-bottom: 1em;
+}
+
+.record-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1em;
+}
+
+.record-card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  padding: 1.5em;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.record-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.record-card h4 {
+  margin-top: 0;
+  font-size: 1.2em;
+  color: #ffa500;
+}
+
+.record-card p {
+  margin: 0.5em 0;
+  font-size: 1em;
+  color: #666;
 }
