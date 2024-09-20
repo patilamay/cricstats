@@ -21,3 +21,23 @@ export const getTopBowler = async () => {
     throw error;
   }
 };
+
+export const getMostFours = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/most-fours`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching most fours:', error);
+    throw error;
+  }
+};
+
+export const getMostSixes = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/most-sixes`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching most sixes:', error);
+    throw error;
+  }
+};
