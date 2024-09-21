@@ -41,3 +41,33 @@ export const getMostSixes = async () => {
     throw error;
   }
 };
+
+export const getTotalRuns = async (matchType, limit = 1) => {
+  try {
+    const response = await axios.get(`${API_URL}/batsman/total-runs`, {
+      params: {
+          match_type: matchType,
+          limit: limit
+      }
+  });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching total runs:', error);
+    throw error;
+  }
+};
+
+export const getTotalWickets = async (matchType, limit = 1) => {
+  try {
+    const response = await axios.get(`${API_URL}/bowler/total-wickets`, {
+      params: {
+          match_type: matchType,
+          limit: limit
+      }
+  });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching total wickets:', error);
+    throw error;
+  }
+};

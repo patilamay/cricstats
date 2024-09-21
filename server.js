@@ -15,11 +15,11 @@ app.use(cors());
 app.use(express.json());
 
 // Use the routes
-app.use('/api', batsmanRoutes);
-app.use('/api', bowlerRoutes);
-app.use('/api', foursRoutes);
-app.use('/api', sixesRoutes);
-app.use('/api', economyRoutes);
+app.use('/api/batsman', batsmanRoutes);
+app.use('/api/bowler', bowlerRoutes);
+app.use('/api/fours', foursRoutes);
+app.use('/api/sixes', sixesRoutes);
+app.use('/api/economy', economyRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
