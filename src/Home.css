@@ -36,12 +36,16 @@
 }
 
 .record-card:hover h5 {
-    color: rgb(217, 255, 0); /* Change font color to orange on hover */
+    color: rgb(217, 255, 0); 
+}
+
+.record-card:hover p {
+    color: rgb(217, 255, 0); 
 }
 
 .record-card:hover h5 .svg-inline--fa {
     transform: rotate(360deg); /* Rotate the icon on hover */
-    color: rgb(217, 255, 0); /* Change icon color to orange on hover */
+    color: rgb(217, 255, 0); 
 }
 
 .record-card {
@@ -87,4 +91,9 @@ h5 {
 
 h4 {
     font-size: 20px;
+}
+
+p {
+    font-family:'Poppins', sans-serif;
+    color: rgb(37, 90, 107);
 }

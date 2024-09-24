@@ -101,3 +101,18 @@ export const getTotalFours = async (matchType, limit = 1) => {
     throw error;
   }
 };
+
+export const getEconomyRate = async (matchType, limit = 1) => {
+  try {
+    const response = await axios.get(`${API_URL}/economy/economy-rates`, {
+      params: {
+          match_type: matchType,
+          limit: limit
+      }
+  });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching economy rates:', error);
+    throw error;
+  }
+};

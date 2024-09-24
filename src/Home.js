@@ -1,11 +1,11 @@
 // Home.js
 import React, { useState, useEffect } from 'react';
 import './Home.css';
-import { getTotalRuns, getTotalWickets, getTotalSixes, getTotalFours } from './api'; // Your API utility functions
+import { getTotalRuns, getTotalWickets, getTotalSixes, getTotalFours, getEconomyRate } from './api'; // Your API utility functions
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPersonRunning, faVolleyball, faDiceSix, faDiceFour } from '@fortawesome/free-solid-svg-icons';
+import { faPersonRunning, faVolleyball, faDiceSix, faDiceFour,faBaseball, faE } from '@fortawesome/free-solid-svg-icons';
 
 const Home = () => {
     const [stats, setStats] = useState({
@@ -26,21 +26,24 @@ const Home = () => {
                     const bowlerData = await getTotalWickets(type, 1);
                     const sixesData = await getTotalSixes(type, 1);
                     const foursData = await getTotalFours(type, 1);
+                    const economyData = await getEconomyRate(type, 1);
                     return { type, 
                         batsman: batsmanData[0], 
                         bowler: bowlerData[0],
                         sixes: sixesData[0],
-                        fours: foursData[0] };
+                        fours: foursData[0] ,
+                        economy: economyData[0]};
                 });
 
                 const results = await Promise.all(promises);
 
                 const newStats = { ODI: {}, Test: {}, T20: {} };
-                results.forEach(({ type, batsman, bowler, sixes, fours }) => {
+                results.forEach(({ type, batsman, bowler, sixes, fours, economy }) => {
                     newStats[type].batsman = batsman;
                     newStats[type].bowler = bowler;
                     newStats[type].sixes = sixes;
                     newStats[type].fours = fours;
+                    newStats[type].economy = economy;
                 });
 
                 setStats(newStats);
@@ -68,6 +71,11 @@ const Home = () => {
                         <div key={type} className="match-type-section">
                             <h4><Skeleton width={150} height={20} /></h4>
                             <div className="record-section">
+                                <div className="record-card">
+                                    <h5><Skeleton width={100} height={20} /></h5>
+                                    <p><Skeleton width={150} /></p>
+                                    <p><Skeleton width={100} /></p>
+                                </div>
                                 <div className="record-card">
                                     <h5><Skeleton width={100} height={20} /></h5>
                                     <p><Skeleton width={150} /></p>
@@ -117,7 +125,7 @@ const Home = () => {
                         <h4>{type} Matches</h4>
                         <div className="record-section">
                             <div className="record-card batsman-card">
-                                <h5>Top Batsman<FontAwesomeIcon icon={faPersonRunning} /></h5>
+                                <h5>Most Runs Scored<FontAwesomeIcon icon={faPersonRunning} /></h5>
                                 {stats[type].batsman ? (
                                     <>
                                         <p>Player: {stats[type].batsman._id.player}</p>
@@ -128,7 +136,7 @@ const Home = () => {
                                 )}
                             </div>
                             <div className="record-card bowler-card">
-                                <h5>Top Bowler<FontAwesomeIcon icon={faVolleyball} /></h5>
+                                <h5>Most Wickets Taken<FontAwesomeIcon icon={faBaseball} /></h5>
                                 {stats[type].bowler ? (
                                     <>
                                         <p>Player: {stats[type].bowler._id.player}</p>
@@ -155,6 +163,17 @@ const Home = () => {
                                     <>
                                         <p>Player: {stats[type].fours._id.player}</p>
                                         <p>Fours: {stats[type].fours.totalFours}</p>
+                                    </>
+                                ) : (
+                                    <p>No data available.</p>
+                                )}
+                            </div>
+                            <div className="record-card economy-card">
+                                <h5>Best Economy<FontAwesomeIcon icon={faE} /></h5>
+                                {stats[type].economy ? (
+                                    <>
+                                        <p>Player: {stats[type].economy._id.player}</p>
+                                        <p>Economy: {stats[type].economy.economyRate}</p>
                                     </>
                                 ) : (
                                     <p>No data available.</p>
