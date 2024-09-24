@@ -71,3 +71,33 @@ export const getTotalWickets = async (matchType, limit = 1) => {
     throw error;
   }
 };
+
+export const getTotalSixes = async (matchType, limit = 1) => {
+  try {
+    const response = await axios.get(`${API_URL}/sixes/total-sixes`, {
+      params: {
+          match_type: matchType,
+          limit: limit
+      }
+  });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching total sixes:', error);
+    throw error;
+  }
+};
+
+export const getTotalFours = async (matchType, limit = 1) => {
+  try {
+    const response = await axios.get(`${API_URL}/fours/total-fours`, {
+      params: {
+          match_type: matchType,
+          limit: limit
+      }
+  });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching total Fours:', error);
+    throw error;
+  }
+};

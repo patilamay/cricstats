@@ -1,84 +1,90 @@
 .home-container {
-    max-width: 1200px;
-    margin: 0 auto;
     padding: 20px;
 }
 
 .home-section {
-    margin-bottom: 40px;
-}
-
-.home-title {
-    font-size: 2.5em;
-    color: #333;
-    margin-bottom: 20px;
-}
-
-.home-subtitle {
-    font-size: 1.2em;
-    color: #666;
-    margin-bottom: 10px;
-}
-
-.section-title {
-    font-size: 2em;
-    color: #333;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
 }
 
 .record-section {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1em;
-  }
-  
-  .record-card {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    padding: 1.5em;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-wrap: nowrap; /* Prevent wrapping */
+    justify-content: space-between; /* Space cards evenly */
+    gap: 20px; /* Space between cards */
+}
+
+.match-type-section {
+    margin-bottom: 20px;
+}
+
+.record-card h5 {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    color: black; /* Default color */
+    transition: color 0.3s ease; /* Transition for color change */
+    margin-bottom: 8px; /* Decrease space between title and content */
+    font-size: 1.2rem;
+}
+
+.record-card h5 .svg-inline--fa {
+    font-size: 4rem;
+    transition: transform 0.3s ease, color 0.3s ease; /* Transition for icon color and animation */
+    color: black; /* Default icon color */
+}
+
+.record-card:hover h5 {
+    color: orange; /* Change font color to orange on hover */
+}
+
+.record-card:hover h5 .svg-inline--fa {
+    transform: rotate(360deg); /* Rotate the icon on hover */
+    color: orange; /* Change icon color to orange on hover */
+}
+
+.record-card {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 12px;
+    padding: 10px 15px;
+    width: 23%;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(10px);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .record-card:hover {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    min-height: 100px;
+}
+
+.record-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  }
-  
-  .record-card h4 {
-    margin-top: 0;
-    font-size: 1.2em;
-    color: goldenrod;
-  }
-  
-  .record-card p {
-    margin: 0.5em 0;
-    font-size: 1em;
-    color: #666;
-  }
-  
-.match-type {
-    font-weight: bold;
-    color: #333;
+    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.1);
 }
 
-.player-name {
-    color: #666;
+h2, h3, h4 {
+    font-family: 'Poppins', sans-serif;
+    color: rgb(37, 90, 107); /* Dark muted color */
 }
 
-.stats-value {
-    font-weight: bold;
-    color: #007bff;
+body {
+    background: linear-gradient(120deg, #f5f7fa, #c3cfe2); /* Light gradient */
+    font-family: 'Poppins', sans-serif;
 }
 
-.loading, .error {
-    text-align: center;
-    padding: 20px;
-    font-size: 1.2em;
-    color: #666;
+h2.home-title {
+    font-size: 2.5rem;
 }
 
-.error {
-    color: #d9534f;
+h5 {
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    font-family:'Poppins', sans-serif;
+}
+
+h4 {
+    font-size: 20px;
 }

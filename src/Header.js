@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBarsStaggered, faTimes } from '@fortawesome/free-solid-svg-icons';
 import './Header.css';
 
 const Header = () => {
     const [isSticky, setIsSticky] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -20,23 +23,25 @@ const Header = () => {
         };
     }, []);
 
+    const toggleMenu = () => {
+        setMenuOpen(!menuOpen);
+    };
+
     return (
         <header className={isSticky ? 'sticky' : ''}>
-            <div className="logo">CricStats</div>
-            <nav>
+            <Link to="/" className="logo">CricStats</Link>
+            <div className="hamburger" onClick={toggleMenu}>
+                <FontAwesomeIcon icon={menuOpen ? faTimes : faBarsStaggered} size="2x"/>
+            </div>
+            <nav className={menuOpen ? 'nav-open' : ''}>
                 <ul>
-                    <li><Link to="/">Home</Link></li>
-                    <li><Link to="/statistics">Statistics</Link></li>
-                    <li><Link to="/ipl">IPL</Link></li>
-                    <li><Link to="/ranking">Ranking</Link></li>
-                    <li><Link to="/glossary">Glossary</Link></li>
-                    <li><Link to="/about">About</Link></li>
+                    <li><Link to="/statistics" onClick={toggleMenu}>Statistics</Link></li>
+                    <li><Link to="/ipl" onClick={toggleMenu}>IPL</Link></li>
+                    <li><Link to="/ranking" onClick={toggleMenu}>Ranking</Link></li>
+                    <li><Link to="/glossary" onClick={toggleMenu}>Glossary</Link></li>
+                    <li><Link to="/about" onClick={toggleMenu}>About</Link></li>
                 </ul>
             </nav>
-            <form className="search-form">
-                <input type="text" placeholder="Search..." className="search-input" />
-                <button type="submit" className="search-button">🔍</button>
-            </form>
         </header>
     );
 };
