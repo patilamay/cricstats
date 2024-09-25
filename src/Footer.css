@@ -4,9 +4,9 @@ footer {
     background-color: #ffffff; /* Matches header color */
     color: #000;
     text-align: center;
-    padding: 1em 0;
+    padding: 10px 20px;
     position: fixed;
-    width: 100%;
+    width: 95%;
     bottom: 0;
     box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
     font-size: 1em;
@@ -15,6 +15,7 @@ footer {
 footer p {
     margin: 0;
     font-size: 0.9em;
+    color: rgb(37, 90, 107);
 }
 
 @media (max-width: 768px) {
