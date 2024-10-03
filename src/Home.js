@@ -5,6 +5,8 @@ import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPersonRunning, faVolleyball, faDiceSix, faDiceFour, faBaseball, faE } from '@fortawesome/free-solid-svg-icons';
+import { useNavigate  } from 'react-router-dom';
+
 
 const Home = () => {
     const [stats, setStats] = useState({
@@ -12,6 +14,13 @@ const Home = () => {
         Test: { batsman: null, bowler: null, sixes: null, fours: null },
         T20: { batsman: null, bowler: null, sixes: null, fours: null },
     });
+    
+    const navigate  = useNavigate();
+    const handleCardClick = (playerName, matchType) => {
+        console.log(`Navigating to statistics for player: ${playerName}`);
+        navigate(`/statistics/${playerName}/${matchType}`);
+    }; 
+    
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('Test'); // For controlling active tab
@@ -59,17 +68,13 @@ const Home = () => {
     if (loading) {
         return (
             <div className="home-container">
-                <section id="introduction" className="home-section">
-                    <h2 className="home-title"><Skeleton width={300} height={30} /></h2>
-                    <p className="home-subtitle"><Skeleton count={2} /></p>
-                </section>
                 <section id="top-records" className="home-section">
                     <h3 className="section-title"><Skeleton width={200} height={25} /></h3>
                     {matchTypes.map((type) => (
                         <div key={type} className="match-type-section">
                             <h4><Skeleton width={150} height={20} /></h4>
                             <div className="record-section">
-                                {[...Array(4)].map((_, idx) => (
+                                {[...Array(3)].map((_, idx) => (
                                     <div key={idx} className="record-card">
                                         <h5><Skeleton width={120} /></h5>
                                         <p><Skeleton width={80} /></p>
@@ -87,7 +92,7 @@ const Home = () => {
 
     const renderCards = (type) => (
         <div className="record-section">
-            <div className="record-card batsman-card">
+            <div className="record-card batsman-card" onClick={() => handleCardClick(stats[type].batsman._id.player, type)}>
                 <h5>Most Runs Scored<FontAwesomeIcon icon={faPersonRunning} /></h5>
                 {stats[type].batsman ? (
                     <>
@@ -98,7 +103,7 @@ const Home = () => {
                     <p>No data available.</p>
                 )}
             </div>
-            <div className="record-card bowler-card">
+            <div className="record-card bowler-card" onClick={() => handleCardClick(stats[type].bowler._id.player, type)}>
                 <h5>Most Wickets Taken<FontAwesomeIcon icon={faBaseball} /></h5>
                 {stats[type].bowler ? (
                     <>
@@ -109,7 +114,7 @@ const Home = () => {
                     <p>No data available.</p>
                 )}
             </div>
-            <div className="record-card sixes-card">
+            <div className="record-card sixes-card" onClick={() => handleCardClick(stats[type].sixes._id.player)}>
                 <h5>Most Sixes<FontAwesomeIcon icon={faDiceSix} /></h5>
                 {stats[type].sixes ? (
                     <>
@@ -120,7 +125,7 @@ const Home = () => {
                     <p>No data available.</p>
                 )}
             </div>
-            <div className="record-card fours-card">
+            <div className="record-card fours-card" onClick={() => handleCardClick(stats[type].fours._id.player)}>
                 <h5>Most Fours<FontAwesomeIcon icon={faDiceFour} /></h5>
                 {stats[type].fours ? (
                     <>
@@ -131,7 +136,7 @@ const Home = () => {
                     <p>No data available.</p>
                 )}
             </div>
-            <div className="record-card economy-card">
+            <div className="record-card economy-card" onClick={() => handleCardClick(stats[type].economy._id.player)}>
                 <h5>Best Economy<FontAwesomeIcon icon={faE} /></h5>
                 {stats[activeTab].economy ? (
                     <>
@@ -143,7 +148,7 @@ const Home = () => {
                 )}
             </div>
 
-            <div className="record-card catches-card">
+            <div className="record-card catches-card" onClick={() => handleCardClick(stats[type].catches._id.player)}>
                 <h5>Most Catches<FontAwesomeIcon icon={faDiceFour} /></h5>
                 {stats[activeTab].catches ? (
                     <>
@@ -155,7 +160,7 @@ const Home = () => {
                 )}
             </div>
 
-            <div className="record-card team-score-card">
+            <div className="record-card team-score-card" onClick={() => handleCardClick(stats[type].totalScore._id.player)}>
                 <h5>Highest Score<FontAwesomeIcon icon={faDiceFour} /></h5>
                 {stats[activeTab].teamscore ? (
                     <>
@@ -167,7 +172,7 @@ const Home = () => {
                 )}
             </div>
 
-            <div className="record-card player-score-card">
+            <div className="record-card player-score-card" onClick={() => handleCardClick(stats[type].playerscore._id.player)}>
                 <h5>Highest score by Player<FontAwesomeIcon icon={faDiceFour} /></h5>
                 {stats[activeTab].playerscore ? (
                     <>
@@ -185,17 +190,9 @@ const Home = () => {
         <div className="home-container">
             <section id="introduction" className="home-section">
                 <h2 className="home-title"></h2>
-                <p1 className="home-subtitle">
-                    Your one-stop destination for comprehensive cricket player statistics and analysis.
-                </p1>
-                <p1 className="home-subtitle">
-                    Explore detailed statistics, rankings, and insights into the world of cricket. Stay
-                    updated with the latest news and trends in the cricket world.
-                </p1>
             </section>
             <section id="top-records" className="home-section">
-                <h3 className="section-title">Top Records</h3>
-                <div className="tabs">
+                 <div className="tabs">
                     {matchTypes.map((type) => (
                         <span
                             key={type}

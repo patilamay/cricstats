@@ -28,7 +28,7 @@ const Header = () => {
     };
 
     return (
-        <header className={isSticky ? 'sticky' : ''}>
+        <header className="sticky-header">
             <Link to="/" className="logo">CricStats</Link>
             <div className="hamburger" onClick={toggleMenu}>
                 <FontAwesomeIcon icon={menuOpen ? faTimes : faBarsStaggered} size="2x"/>

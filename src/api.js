@@ -116,3 +116,13 @@ export const getEconomyRate = async (matchType, limit = 1) => {
     throw error;
   }
 };
+
+export const getPlayerStats = async (playerName,matchType) => {
+  try {
+    const response = await axios.get(`${API_URL}/player/stats/${playerName}/${matchType}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching player stats:', error);
+    throw error;
+  }
+};
