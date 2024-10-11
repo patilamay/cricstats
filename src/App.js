@@ -5,6 +5,7 @@ import Header from './Header';
 import Footer from './Footer';
 import Home from './Home';
 import Statistics from './Statistics';
+import DetailedStatistics from './DetailedStatistics';
 import IPL from './IPL';
 import Ranking from './Ranking';
 import Glossary from './Glossary';
@@ -20,6 +21,7 @@ const App = () => {
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/statistics/:playerName/:matchType" element={<Statistics />} />
+                        <Route path="/detailedstatistics" element={<DetailedStatistics />} />
                         <Route path="/ipl" element={<IPL />} />
                         <Route path="/ranking" element={<Ranking />} />
                         <Route path="/glossary" element={<Glossary />} />

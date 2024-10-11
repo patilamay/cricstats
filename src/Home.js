@@ -114,7 +114,7 @@ const Home = () => {
                     <p>No data available.</p>
                 )}
             </div>
-            <div className="record-card sixes-card" onClick={() => handleCardClick(stats[type].sixes._id.player)}>
+            <div className="record-card sixes-card" onClick={() => handleCardClick(stats[type].sixes._id.player, type)}>
                 <h5>Most Sixes<FontAwesomeIcon icon={faDiceSix} /></h5>
                 {stats[type].sixes ? (
                     <>
@@ -125,7 +125,7 @@ const Home = () => {
                     <p>No data available.</p>
                 )}
             </div>
-            <div className="record-card fours-card" onClick={() => handleCardClick(stats[type].fours._id.player)}>
+            <div className="record-card fours-card" onClick={() => handleCardClick(stats[type].fours._id.player, type)}>
                 <h5>Most Fours<FontAwesomeIcon icon={faDiceFour} /></h5>
                 {stats[type].fours ? (
                     <>
@@ -136,7 +136,7 @@ const Home = () => {
                     <p>No data available.</p>
                 )}
             </div>
-            <div className="record-card economy-card" onClick={() => handleCardClick(stats[type].economy._id.player)}>
+            <div className="record-card economy-card" onClick={() => handleCardClick(stats[type].economy._id.player, type)}>
                 <h5>Best Economy<FontAwesomeIcon icon={faE} /></h5>
                 {stats[activeTab].economy ? (
                     <>
@@ -148,7 +148,7 @@ const Home = () => {
                 )}
             </div>
 
-            <div className="record-card catches-card" onClick={() => handleCardClick(stats[type].catches._id.player)}>
+            <div className="record-card catches-card" onClick={() => handleCardClick(stats[type].catches._id.player, type)}>
                 <h5>Most Catches<FontAwesomeIcon icon={faDiceFour} /></h5>
                 {stats[activeTab].catches ? (
                     <>
@@ -160,7 +160,7 @@ const Home = () => {
                 )}
             </div>
 
-            <div className="record-card team-score-card" onClick={() => handleCardClick(stats[type].totalScore._id.player)}>
+            <div className="record-card team-score-card" onClick={() => handleCardClick(stats[type].totalScore._id.player, type)}>
                 <h5>Highest Score<FontAwesomeIcon icon={faDiceFour} /></h5>
                 {stats[activeTab].teamscore ? (
                     <>
@@ -172,7 +172,7 @@ const Home = () => {
                 )}
             </div>
 
-            <div className="record-card player-score-card" onClick={() => handleCardClick(stats[type].playerscore._id.player)}>
+            <div className="record-card player-score-card" onClick={() => handleCardClick(stats[type].playerscore._id.player, type)}>
                 <h5>Highest score by Player<FontAwesomeIcon icon={faDiceFour} /></h5>
                 {stats[activeTab].playerscore ? (
                     <>

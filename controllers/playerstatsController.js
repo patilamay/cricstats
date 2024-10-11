@@ -28,11 +28,32 @@ const getPlayerStats = async (req, res) => {
                         { $match: { "innings.overs.deliveries.batter": { $regex: new RegExp(`^${playerName}$`, 'i') } } },
                         {
                             $group: {
-                                _id: playerName,
-                                totalRuns: { $sum: "$innings.overs.deliveries.runs.batter" },
-                                //inningsPlayed: { $sum: 1 },
+                                _id: { matchId: '$_id', team: 'innings.team' },
+                                totalRunsInInnings: { $sum: "$innings.overs.deliveries.runs.batter" },
                                 fours: { $sum: { $cond: [{ $eq: ['$innings.overs.deliveries.runs.batter', 4] }, 1, 0] } },
                                 sixes: { $sum: { $cond: [{ $eq: ['$innings.overs.deliveries.runs.batter', 6] }, 1, 0] } }
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: playerName,
+                                totalRuns: { $sum: '$totalRunsInInnings' },
+                                totalFifties: {
+                                    $sum: {
+                                        $cond: [
+                                            { $and: [{ $gte: ['$totalRunsInInnings', 50] }, { $lt: ['$totalRunsInInnings', 100] }] },
+                                            1,
+                                            0
+                                        ]
+                                    }
+                                },
+                                totalHundreds: {
+                                    $sum: {
+                                        $cond: [{ $gte: ['$totalRunsInInnings', 100] }, 1, 0]
+                                    }
+                                },
+                                totalFours: { $sum: '$fours' },
+                                totalSixes: { $sum: '$sixes' }
                             }
                         }
                     ],
@@ -100,7 +121,7 @@ const getPlayerStats = async (req, res) => {
                         {
                             $group: {
                                 _id: playerName,
-                                totalBowlingInnings: { $sum: 1}
+                                totalBowlingInnings: { $sum: 1 }
                             }
                         }
                     ],
@@ -129,7 +150,7 @@ const getPlayerStats = async (req, res) => {
         const results = await collection.aggregate(pipeline).toArray();
         //console.log('Aggregation results:', JSON.stringify(results, null, 2));
 
-        const battingStats = results[0].battingStats[0] || { totalRuns: 0, totalFours: 0, totalSixes: 0 };
+        const battingStats = results[0].battingStats[0] || { totalRuns: 0, totalFifties: 0, totalHundreds: 0, totalFours: 0, totalSixes: 0 };
         const bowlingStats = results[0].bowlingStats[0] || { totalOvers: 0, totalWickets: 0 };
         const totalBattingInnings = results[0].battingInningsPlayed[0]?.totalBattingInnings || 0;
         const totalBowlingInnings = results[0].bowlingInningsPlayed[0]?.totalBowlingInnings || 0;
@@ -139,14 +160,16 @@ const getPlayerStats = async (req, res) => {
         const playerStats = {
             playerName,
             matchType: matchType,
-            matchesPlayed,
             totalBattingInnings,
             totalBowlingInnings,
-            totalRuns: battingStats.totalRuns,
-            totalFours: battingStats.fours,
-            totalSixes: battingStats.sixes,
-            totalOvers: bowlingStats.totalOvers.toFixed(2),
-            totalWickets: bowlingStats.totalWickets
+            matchesPlayed: matchesPlayed.toLocaleString(),
+            totalRuns: battingStats.totalRuns.toLocaleString(),
+            totalFifties: battingStats.totalFifties.toLocaleString(),
+            totalHundreds: battingStats.totalHundreds.toLocaleString(),
+            totalFours: battingStats.totalFours.toLocaleString(),
+            totalSixes: battingStats.totalSixes.toLocaleString(),
+            totalOvers: parseFloat(bowlingStats.totalOvers.toFixed(2)).toLocaleString(),
+            totalWickets: bowlingStats.totalWickets.toLocaleString()
         };
 
         res.json(playerStats);

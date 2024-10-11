@@ -9,6 +9,7 @@ const foursRoutes = require('./routes/foursRoutes');
 const sixesRoutes = require('./routes/sixesRoutes');
 const economyRoutes = require('./routes/economyRoutes');
 const playerstatsRoutes = require('./routes/playerstatsRoutes');
+const allPlayersDetailedStatsRoutes = require('./routes/allPlayersDetailedStatsRoutes');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -23,6 +24,7 @@ app.use('/api/fours', foursRoutes);
 app.use('/api/sixes', sixesRoutes);
 app.use('/api/economy', economyRoutes);
 app.use('/api/player',playerstatsRoutes);
+app.use('/api',allPlayersDetailedStatsRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

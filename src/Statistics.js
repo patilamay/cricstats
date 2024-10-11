@@ -45,6 +45,8 @@ const Statistics = () => {
         <p><strong>Matches Played:</strong> {playerStats.matchesPlayed}</p>
         <p><strong>Batting Innings:</strong> {playerStats.totalBattingInnings}</p>
         <p><strong>Total Runs:</strong> {playerStats.totalRuns}</p>
+        <p><strong>100's:</strong> {playerStats.totalHundreds}</p>
+        <p><strong>50's:</strong> {playerStats.totalFifties}</p>
         <p><strong>Total Fours:</strong> {playerStats.totalFours}</p>
         <p><strong>Total Sixes:</strong> {playerStats.totalSixes}</p>
       </div>

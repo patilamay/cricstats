@@ -126,3 +126,13 @@ export const getPlayerStats = async (playerName,matchType) => {
     throw error;
   }
 };
+
+export const getAllPlayersDetailedStats = async (matchType,page = 1, limit = 10, sortColumn = 'playerName', sortOrder = 'asc') => {
+  try {
+    const response = await axios.get(`${API_URL}/playersdetailedstats/${matchType}?page=${page}&limit=${limit}&sortColumn=${sortColumn}&sortOrder=${sortOrder}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching player stats:', error);
+    throw error;
+  }
+};

@@ -35,7 +35,7 @@ const Header = () => {
             </div>
             <nav className={menuOpen ? 'nav-open' : ''}>
                 <ul>
-                    <li><Link to="/statistics" onClick={toggleMenu}>Statistics</Link></li>
+                    <li><Link to="/detailedstatistics" onClick={toggleMenu}>Statistics</Link></li>
                     <li><Link to="/ipl" onClick={toggleMenu}>IPL</Link></li>
                     <li><Link to="/ranking" onClick={toggleMenu}>Ranking</Link></li>
                     <li><Link to="/glossary" onClick={toggleMenu}>Glossary</Link></li>
