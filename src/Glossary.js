@@ -1,24 +1,114 @@
-// src/Glossary.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import './Glossary.css';
 
-const Glossary = () => {
-    return (
-        <section id="glossary">
-            <h2>Glossary</h2>
-            <p>Definitions of cricket terms and jargon.</p>
-            <h3>A</h3>
-            <div className="glossary-card">
-                <h4>All-rounder</h4>
-                <p>A player who is proficient in both batting and bowling.</p>
-            </div>
-            <h3>B</h3>
-            <div className="glossary-card">
-                <h4>Bouncer</h4>
-                <p>A fast, short-pitched delivery that bounces high towards the batsman's head.</p>
-            </div>
-            
-        </section>
-    );
+const allGlossaryTerms = [
+  { term: "Batting", definition: "The act of hitting the ball with a bat in order to score runs." },
+  { term: "Bowling", definition: "The action of delivering the ball to the batsman." },
+  { term: "Over", definition: "A set of six legal balls delivered by the bowler." },
+  { term: "Wicket", definition: "The three stumps and two bails at the bowler's end or the act of dismissing a batsman." },
+  { term: "Run", definition: "The score a batsman accumulates by running between the wickets." },
+  { term: "Innings", definition: "The period during which a team or batsman plays until they are dismissed or declare." },
+  { term: "Duck", definition: "A score of zero by a batsman." },
+  { term: "Century", definition: "A score of 100 or more runs by a batsman in a single innings." },
+  { term: "LBW", definition: "Leg Before Wicket; a way of dismissing the batsman." },
+  { term: "Spin Bowling", definition: "A style of bowling that relies on spinning the ball to deceive the batsman." },
+  { term: "Fast Bowling", definition: "A style of bowling that relies on speed to challenge the batsman." },
+  { term: "Appeal", definition: " A request made by the fielding team to the umpire to give a decision, often for a dismissal." },
+{ term: "All-rounder", definition: " A player who is good at both batting and bowling." },
+{ term: "Bails", definition: " The small pieces of wood that sit on top of the stumps." },
+{ term: "Beamer", definition: " A type of delivery that reaches the batsman above waist height without bouncing." },
+{ term: "Block Hole", definition: " The area at the batsman’s feet where a yorker is targeted." },
+{ term: "Bouncer", definition: " A fast, short-pitched ball that bounces high near the batsman’s head." },
+{ term: "Carry", definition: " When the ball reaches the wicketkeeper or fielder without bouncing." },
+{ term: "Cover Drive", definition: " A specific type of drive shot that goes through the covers area of the field." },
+{ term: "Crease", definition: " The lines on the pitch that mark where the batsman stands and where the bowler must release the ball." },
+{ term: "Dot Ball", definition: " A delivery that results in no runs being scored." },
+{ term: "Edge", definition: " When the ball touches the edge of the bat, usually resulting in a catch." },
+{ term: "Extras", definition: " Runs awarded to the batting team in ways other than from the bat, such as wides or no-balls." },
+{ term: "Follow-on", definition: " When the team that batted second is asked to bat again immediately after their first innings, due to trailing by a large margin." },
+{ term: "Full Toss", definition: " A delivery that reaches the batsman without bouncing." },
+{ term: "Golden Duck", definition: " When a batsman gets out without scoring any runs on the very first ball faced." },
+{ term: "Googly", definition: " A type of leg spin delivery that spins in the opposite direction of a normal leg break." },
+{ term: "Hook Shot", definition: " A shot played against a bouncer, hitting the ball around waist to head height." },
+{ term: "Leg Slip", definition: " A close fielding position near the batsman on the leg side." },
+{ term: "Maiden Over", definition: " An over in which no runs are scored." },
+{ term: "No Ball", definition: " A delivery that is deemed illegal by the umpire, often due to overstepping the crease." },
+{ term: "Off Break", definition: " A type of spin delivery that turns from off side to leg side for a right-handed batsman." },
+{ term: "On Drive", definition: " A shot played to the on side (leg side) of the field." },
+{ term: "Outfield", definition: " The area of the cricket field beyond the 30-yard circle." },
+{ term: "Pace", definition: " The speed of a bowler's delivery." },
+{ term: "Paddle Sweep", definition: " A type of sweep shot played with the intention of deflecting the ball fine on the leg side." },
+{ term: "Partnership", definition: " The period during which two batsmen bat together before one gets out." },
+{ term: "Pull Shot", definition: " A powerful shot played to a short-pitched ball, usually hitting it to the leg side." },
+{ term: "Quick Single", definition: " A risky run taken when the ball is fielded within the infield, often to steal a run." },
+{ term: "Run Out", definition: " When a batsman is dismissed by a fielder hitting the stumps with the ball before they complete a run." },
+{ term: "Seam Bowling", definition: " A type of fast bowling that uses the seam of the ball to create movement off the pitch." },
+{ term: "Short Leg", definition: " A fielding position close to the batsman on the leg side." },
+{ term: "Silly Point", definition: " A very close fielding position on the off side, often used for spin bowlers." },
+{ term: "Slip", definition: " A fielding position close to the wicketkeeper, used to catch edged balls." },
+{ term: "Slog", definition: " An aggressive shot, typically played to hit the ball as far as possible." },
+{ term: "Square Leg", definition: " A fielding position square to the wicket on the leg side." },
+{ term: "Strike Rate", definition: " The rate at which a batsman scores runs, calculated as runs per 100 balls." },
+{ term: "Sweeper", definition: " A fielder on the boundary, typically used to stop boundary shots." },
+{ term: "Third Man", definition: " A fielding position behind the wicketkeeper, on the off side." },
+{ term: "Twelfth Man", definition: " A substitute player who can replace an injured fielder but cannot bowl, bat, or keep wicket." },
+{ term: "Umpire", definition: " The official who oversees the match and makes decisions regarding the rules of cricket." },
+{ term: "Unorthodox Shot", definition: " A shot played in an unconventional manner, often to surprise the fielders." },
+{ term: "Wagon Wheel", definition: " A graphical representation of the areas where a batsman has hit the ball during an innings." },
+{ term: "Wide Ball", definition: " A delivery that is too far from the batsman, resulting in an extra run being awarded." },
+{ term: "Yorker", definition: " A full-pitched delivery bowled at the batsman's feet, making it difficult to hit." },
+{ term: "Zooter", definition: " A type of delivery used by spin bowlers where the ball skids straight on without spinning." },
+];
+
+const GlossaryPage = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [displayedTerms, setDisplayedTerms] = useState([]);
+  const [itemsToLoad, setItemsToLoad] = useState(5);
+
+  useEffect(() => {
+    // Load initial terms
+    setDisplayedTerms(allGlossaryTerms.slice(0, itemsToLoad));
+  }, [itemsToLoad]);
+
+  const handleScroll = () => {
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50) {
+      // Load more items when reaching near the bottom of the page
+      setItemsToLoad((prevItems) => Math.min(prevItems + 5, allGlossaryTerms.length));
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const filteredTerms = displayedTerms.filter(term =>
+    term.term.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="glossary-page">
+      <header className="glossary-header">
+        <h1>Glossary</h1>
+        <input 
+          type="text" 
+          className="search-bar" 
+          placeholder="Search for a cricket term..." 
+          value={searchTerm} 
+          onChange={(e) => setSearchTerm(e.target.value)} 
+        />
+      </header>
+
+      <div className="glossary-list">
+        {filteredTerms.map((term, index) => (
+          <div key={index} className="glossary-item">
+            <h3>{term.term}</h3>
+            <p>{term.definition}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
-export default Glossary;
+export default GlossaryPage;
