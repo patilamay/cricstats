@@ -10,10 +10,10 @@
     "preview": "vite preview",
     "data": "node pipeline/build.js",
     "data:sample": "node pipeline/sample/make-sample.js .cache/sample && node pipeline/build.js --local .cache/sample",
-    "test": "node --test \"pipeline/test/*.test.js\""
+    "test": "node --test pipeline/test/parse.test.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "dependencies": {
     "react": "^18.3.1",

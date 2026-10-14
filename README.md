@@ -28,7 +28,7 @@ src/                React front end (Vite)
 
 ## Running it locally
 
-Requires Node 20 or newer.
+Requires Node 22 or newer.
 
 ```bash
 npm install
