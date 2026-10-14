@@ -24,7 +24,7 @@ export default function Header() {
           <NavLink to="/glossary" onClick={close}>Glossary</NavLink>
           <NavLink to="/about" onClick={close}>About</NavLink>
         </nav>
-        <PlayerSearch onPick={close} />
+        {pathname !== '/' && <PlayerSearch onPick={close} />}
       </div>
     </header>
   );
