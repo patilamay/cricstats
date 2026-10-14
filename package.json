@@ -9,8 +9,8 @@
     "build": "vite build && node scripts/spa-fallback.js",
     "preview": "vite preview",
     "data": "node pipeline/build.js",
-    "data:sample": "node pipeline/sample/make-sample.js .cache/sample && node pipeline/build.js --local .cache/sample",
-    "test": "node --test pipeline/test/parse.test.js"
+    "data:sample": "node pipeline/sample/make-sample.js .cache/sample && node pipeline/build.js --local .cache/sample --wiki-local .cache/sample/_wiki",
+    "test": "node --test pipeline/test/parse.test.js pipeline/test/infobox.test.js pipeline/test/careers.test.js"
   },
   "engines": {
     "node": ">=22"

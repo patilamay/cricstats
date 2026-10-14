@@ -10,6 +10,7 @@ export default function Footer() {
         <p>
           Ball-by-ball data from <a href="https://cricsheet.org">Cricsheet</a>, made available under the{' '}
           <a href="https://opendatacommons.org/licenses/by/1-0/">Open Data Commons Attribution License</a>.
+          {meta && meta.wiki && <> Career totals for older matches from <a href="https://en.wikipedia.org/">Wikipedia</a>, under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.</>}
         </p>
         {meta && (
           <p>

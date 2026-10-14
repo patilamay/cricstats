@@ -77,7 +77,7 @@ export default function Home() {
           <div className="board-head">
             <h1 id="board-title">{comp.name}</h1>
             <p className="board-sub">
-              Career leaders across {num(comp.matches)} matches, {comp.from ? comp.from.slice(0, 4) : ''} to {date(comp.to)}
+              {comp.alltime ? `All-time career leaders, updated to ${date(comp.to)}` : `Career leaders across ${num(comp.matches)} matches, ${comp.from ? comp.from.slice(0, 4) : ''} to ${date(comp.to)}`}
             </p>
           </div>
           <div className="board-switch" role="group" aria-label="Choose a competition">
@@ -102,7 +102,7 @@ export default function Home() {
             </div>
           )}
           <div className="board-foot">
-            <Link to={`/stats/${compId}`}>All {comp.name} stats</Link>
+            <Link to={`/stats/${compId}`}>{comp.alltime ? `All-time ${comp.name} stats` : `All ${comp.name} stats`}</Link>
             <Link to={`/stats/${compId}/records`}>Records</Link>
             {comp.group === 'Leagues' && <Link to={`/stats/${compId}/seasons`}>Season by season</Link>}
           </div>
@@ -112,6 +112,7 @@ export default function Home() {
       <div className="page home-body">
         <section className="home-section" aria-labelledby="more-leaders">
           <h2 id="more-leaders">More {comp.name} leaders</h2>
+          {comp.alltime && <p className="section-note">These lists use ball-by-ball data, which covers matches since {comp.from ? comp.from.slice(0, 4) : ''}.</p>}
           <div className="mini-grid">
             {boards.filter((b) => !['runs', 'wickets'].includes(b.key)).map((b) => <MiniBoard key={b.key} board={b} />)}
           </div>

@@ -6,6 +6,7 @@ on:
     - cron: '17 6 * * *' # daily, 06:17 UTC (Cricsheet usually publishes overnight UK time)
   push:
     branches: [master]
+  pull_request: # build and report only; never deploys
   workflow_dispatch:
 
 permissions:
@@ -20,7 +21,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
 
@@ -38,8 +39,19 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Download Cricsheet data and compute stats
+      # Wikipedia pages are cached between runs; only changed pages are downloaded again.
+      - name: Restore Wikipedia cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/wiki
+          key: wiki-cache-${{ github.run_id }}
+          restore-keys: wiki-cache-
+
+      - name: Download Cricsheet and Wikipedia data and compute stats
         run: npm run data
+
+      - name: Report on the data
+        run: node pipeline/report.js
 
       - name: Build site
         run: npm run build
@@ -47,10 +59,12 @@ jobs:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}/
 
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: dist
 
   deploy:
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     environment:

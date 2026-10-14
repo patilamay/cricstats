@@ -25,6 +25,7 @@ export class CompetitionAggregator {
     this.firstDate = null;
     this.lastDate = null;
     this.seen = new Set();
+    this.ledger = new Map(); // player id -> per-match lines, for merging with Wikipedia totals
   }
 
   player(id, name) {
@@ -131,10 +132,47 @@ export class CompetitionAggregator {
       }
     }
 
+    this.addLedger(m);
+
     for (const [id, mb] of matchBowl) {
       const bw = this.players.get(id).bowl;
       if (mb.w > bw.bbmW || (mb.w === bw.bbmW && mb.r < bw.bbmR)) { bw.bbmW = mb.w; bw.bbmR = mb.r; }
       if (mb.w >= 10) bw.w10m += 1;
+    }
+  }
+
+  // One line per player per match: everything needed to add matches on top of a
+  // Wikipedia "as of" total. Super overs and forfeited innings are excluded.
+  addLedger(m) {
+    const lines = new Map();
+    const line = (id) => {
+      if (!lines.has(id)) lines.set(id, { d: m.date, r: 0, out: 0, n100: 0, n50: 0, hs: -1, hsNo: false, bb: 0, rc: 0, wk: 0, w5: 0, bbiW: -1, bbiR: 0, ct: 0, st: 0 });
+      return lines.get(id);
+    };
+    for (const pl of m.players) line(pl.id);
+    for (const inn of m.innings) {
+      if (inn.superOver || inn.forfeited) continue;
+      for (const b of inn.batting) {
+        const l = line(b.id);
+        l.r += b.runs;
+        if (b.out) l.out += 1;
+        if (b.runs >= 100) l.n100 += 1; else if (b.runs >= 50) l.n50 += 1;
+        if (b.runs > l.hs || (b.runs === l.hs && !b.out)) { l.hs = b.runs; l.hsNo = !b.out; }
+      }
+      for (const w of inn.bowling) {
+        const l = line(w.id);
+        l.bb += w.balls; l.rc += w.runs; l.wk += w.wkts;
+        if (w.wkts >= 5) l.w5 += 1;
+        if (w.wkts > l.bbiW || (w.wkts === l.bbiW && w.runs < l.bbiR)) { l.bbiW = w.wkts; l.bbiR = w.runs; }
+      }
+      for (const f of inn.fielding) {
+        const l = line(f.id);
+        if (f.kind === 'ct') l.ct += 1; else if (f.kind === 'st') l.st += 1;
+      }
+    }
+    for (const [id, l] of lines) {
+      if (!this.ledger.has(id)) this.ledger.set(id, []);
+      this.ledger.get(id).push(l);
     }
   }
 

@@ -151,3 +151,31 @@ for (const [compId, cfg] of Object.entries(SETS)) {
   }
 }
 console.log(`wrote ${count} synthetic matches to ${outDir}`);
+
+// Synthetic Wikipedia data for the sample: a player register (cricsheet id <-> fake ESPNcricinfo id),
+// three fictional retired legends who are not in the ball-by-ball data, and earlier-career totals
+// for a few sample Test players so the "Wikipedia + Cricsheet" merge is exercised.
+const wikiDir = path.join(outDir, '_wiki');
+fs.mkdirSync(wikiDir, { recursive: true });
+const reg = ['identifier,name,unique_name,key_cricinfo'];
+let cid = 5000;
+const cidOf = new Map();
+for (const [name, id] of registry) { cidOf.set(name, String(cid)); reg.push(`${id},${name},${name},${cid}`); cid++; }
+fs.writeFileSync(path.join(wikiDir, 'people.csv'), reg.join('\n') + '\n');
+
+const col = (o) => ({ m: 0, r: 0, avg: null, c100: 0, c50: 0, hs: null, hsNo: false, balls: 0, wk: 0, bavg: null, w5: 0, w10: 0, bbi: null, ct: 0, st: 0, ...o });
+const wiki = {
+  1: { title: 'Arthur Pemberton', name: 'Arthur Pemberton', country: 'Avalon', asof: '1986-09-01',
+    formats: { 'Test-m': col({ m: 96, r: 8412, avg: 57.22, c100: 31, c50: 29, hs: 287, ct: 61 }), 'ODI-m': col({ m: 44, r: 1580, avg: 41.58, c100: 3, c50: 10, hs: 121, ct: 12 }) } },
+  2: { title: 'Wes Halloran (cricketer)', name: 'Wes Halloran', country: 'Borealis', asof: '1994-03-15',
+    formats: { 'Test-m': col({ m: 88, r: 1203, avg: 13.08, c50: 2, hs: 64, balls: 21450, wk: 402, bavg: 22.41, w5: 27, w10: 6, bbi: { w: 9, r: 52 }, ct: 23 }) } },
+  3: { title: 'Meera Joshi', name: 'Meera Joshi', country: 'Avalon Women', asof: '2016-11-20',
+    formats: { 'T20I-w': col({ m: 89, r: 2364, avg: 37.52, c100: 1, c50: 17, hs: 104, hsNo: true, ct: 30 }) } },
+};
+const veterans = [...(squads.get('Avalon') || []).slice(0, 2), ...(squads.get('Caledon') || []).slice(0, 2)];
+for (const [i, name] of veterans.entries()) {
+  wiki[cidOf.get(name)] = { title: `${name} (cricketer)`, name: `${name.split(' ')[0]}. ${name.split(' ')[1]} ${['Senior', 'Varma', 'Holt', 'Reyes'][i]}`.replace(/^(\w)\. /, '$1 '), country: i < 2 ? 'Avalon' : 'Caledon', asof: '2024-06-30',
+    formats: { 'Test-m': col({ m: 55 + i * 10, r: 3100 + i * 400, avg: 44.3, c100: 8 + i, c50: 14, hs: 211, balls: 900, wk: 12, bavg: 38.5, bbi: { w: 3, r: 41 }, ct: 30 }) } };
+}
+fs.writeFileSync(path.join(wikiDir, 'wiki.json'), JSON.stringify(wiki));
+console.log(`wrote sample Wikipedia data for ${Object.keys(wiki).length} players to ${wikiDir}`);

@@ -357,3 +357,11 @@ table.scorecard tr.sub-row td { color: var(--muted); background: var(--surface-2
 .footer-inner { max-width: var(--page); margin: 0 auto; padding: 1.75rem 16px 2.25rem; }
 @media (min-width: 720px) { .footer-inner { padding: 1.75rem 24px 2.25rem; } }
 .footer-inner p { margin: 0 0 0.35rem; max-width: var(--measure); }
+
+/* Notes and source labels for combined Wikipedia + Cricsheet figures */
+.section-note { color: var(--muted); font-size: 0.92rem; max-width: var(--measure); margin: -0.15rem 0 1rem; }
+.section-lede { color: var(--muted); font-size: 0.92rem; margin: 0 0 1.25rem; padding: 0.75rem 1rem; background: var(--surface-2); border-radius: var(--r-sm); max-width: max-content; }
+.src-tag { display: inline-block; font-size: 0.78rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+.src-tag.src-w { background: var(--coral-soft); color: var(--coral-ink); }
+.src-tag.src-wc { background: var(--teal-soft); color: var(--teal-ink); }
+td.src-cell { color: var(--muted); font-size: 0.85rem; white-space: normal; min-width: 10rem; }

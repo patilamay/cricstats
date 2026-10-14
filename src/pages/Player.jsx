@@ -15,22 +15,29 @@ export default function Player() {
 
   const comps = meta.competitions.filter((c) => p.comps[c.id]);
   const compById = Object.fromEntries(meta.competitions.map((c) => [c.id, c]));
-  const teams = [...new Set(comps.flatMap((c) => p.comps[c.id].t || []))];
-  const matches = comps.reduce((a, c) => a + p.comps[c.id].m, 0);
+  const career = p.career || {};
+  const careerComps = meta.competitions.filter((c) => career[c.id]);
+  const teams = [...new Set([...comps.flatMap((c) => p.comps[c.id].t || []), ...(p.country && !comps.length ? [p.country] : [])])];
   const batting = comps.filter((c) => p.comps[c.id].b);
   const bowling = comps.filter((c) => p.comps[c.id].w);
   const fielding = comps.filter((c) => p.comps[c.id].f);
-  const sum = (f) => comps.reduce((a, c) => a + (f(p.comps[c.id]) || 0), 0);
-  const totalRuns = sum((s) => s.b && s.b.r);
-  const totalWkts = sum((s) => s.w && s.w.wk);
-  const totalCt = sum((s) => s.f && s.f.ct);
+  // Totals prefer full careers (Wikipedia + Cricsheet) for international formats.
+  const allIds = [...new Set([...comps.map((c) => c.id), ...careerComps.map((c) => c.id)])];
+  const pick = (cid, fromCareer, fromComp) => (career[cid] ? fromCareer(career[cid]) : p.comps[cid] ? fromComp(p.comps[cid]) : 0) || 0;
+  const matches = allIds.reduce((a, cid) => a + pick(cid, (c) => c.m, (c) => c.m), 0);
+  const totalRuns = allIds.reduce((a, cid) => a + pick(cid, (c) => c.r, (c) => c.b && c.b.r), 0);
+  const totalWkts = allIds.reduce((a, cid) => a + pick(cid, (c) => c.wk, (c) => c.w && c.w.wk), 0);
+  const totalCt = allIds.reduce((a, cid) => a + pick(cid, (c) => c.ct, (c) => c.f && c.f.ct), 0);
+  const ballByBall = careerComps.length > 0;
+  const wikiUrl = p.wiki ? `https://en.wikipedia.org/wiki/${encodeURIComponent(p.wiki.replace(/ /g, '_'))}` : null;
+  const srcNote = (c) => (c.src === 'c' ? 'Ball-by-ball' : c.src === 'w' ? `Wikipedia${c.asof ? `, as of ${date(c.asof)}` : ''}` : `Wikipedia to ${date(c.asof)}, then ball-by-ball`);
 
   return (
     <div className="page player-page">
       <header className="player-head">
-        <h1>{p.n}</h1>
+        <h1>{p.fn || p.n}</h1>
         <p className="player-teams">{teams.join(', ')}</p>
-        <p className="muted">{num(matches)} matches in {comps.length} {comps.length === 1 ? 'competition' : 'competitions'} covered by this site</p>
+        <p className="muted">{num(matches)} matches in the competitions this site covers</p>
         <ul className="player-chips">
           <li><span className="chip-val">{num(matches)}</span><span className="chip-label">Matches</span></li>
           {totalRuns > 0 && <li><span className="chip-val">{num(totalRuns)}</span><span className="chip-label">Runs</span></li>}
@@ -39,9 +46,50 @@ export default function Player() {
         </ul>
       </header>
 
+      {careerComps.length > 0 && (
+        <section className="player-section" aria-labelledby="p-career">
+          <h2 id="p-career">International career</h2>
+          <p className="section-note">Complete career figures.{wikiUrl && <> Older matches from <a href={wikiUrl}>Wikipedia</a>, newer ones from ball-by-ball data.</>}</p>
+          <div className="table-wrap">
+            <table className="data">
+              <thead>
+                <tr>
+                  <th className="text" scope="col">Format</th>
+                  <th className="num" scope="col" title="Matches">M</th><th className="num" scope="col">Runs</th>
+                  <th className="num" scope="col" title="Batting average">Avg</th><th className="num" scope="col">100</th>
+                  <th className="num" scope="col">50</th><th className="num" scope="col" title="Highest score">HS</th>
+                  <th className="num" scope="col">Wkts</th><th className="num" scope="col" title="Bowling average">Bowl avg</th>
+                  <th className="num" scope="col" title="Economy">Econ</th><th className="num" scope="col" title="Best bowling in an innings">BBI</th>
+                  <th className="num" scope="col" title="Catches/stumpings">Ct/St</th><th className="text" scope="col">Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {careerComps.map((c) => {
+                  const r = career[c.id];
+                  return (
+                    <tr key={c.id}>
+                      <td className="text"><Link to={`/stats/${c.id}/alltime`}>{c.name}</Link></td>
+                      <td className="num">{r.m}</td><td className="num strong">{num(r.r)}</td><td className="num">{dec(r.avg)}</td>
+                      <td className="num">{r.c100}</td><td className="num">{r.c50}</td><td className="num">{r.hs == null ? '–' : `${r.hs}${r.hsNo ? '*' : ''}`}</td>
+                      <td className="num strong">{r.wk}</td><td className="num">{dec(r.bavg)}</td><td className="num">{dec(r.econ)}</td>
+                      <td className="num">{r.bbi || '–'}</td><td className="num">{r.ct}/{r.st}</td>
+                      <td className="text src-cell">{srcNote(r)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {ballByBall && comps.length > 0 && (
+        <p className="section-lede">The tables below are built from ball-by-ball data, which covers matches from about 2001 onward.</p>
+      )}
+
       {batting.length > 0 && (
         <section className="player-section" aria-labelledby="p-bat">
-          <h2 id="p-bat">Batting</h2>
+          <h2 id="p-bat">{ballByBall ? 'Batting by competition' : 'Batting'}</h2>
           <div className="table-wrap">
             <table className="data">
               <thead>
@@ -76,7 +124,7 @@ export default function Player() {
 
       {bowling.length > 0 && (
         <section className="player-section" aria-labelledby="p-bowl">
-          <h2 id="p-bowl">Bowling</h2>
+          <h2 id="p-bowl">{ballByBall ? 'Bowling by competition' : 'Bowling'}</h2>
           <div className="table-wrap">
             <table className="data">
               <thead>
@@ -110,7 +158,7 @@ export default function Player() {
 
       {fielding.length > 0 && (
         <section className="player-section" aria-labelledby="p-fld">
-          <h2 id="p-fld">Fielding</h2>
+          <h2 id="p-fld">{ballByBall ? 'Fielding by competition' : 'Fielding'}</h2>
           <div className="table-wrap">
             <table className="data">
               <thead><tr><th className="text" scope="col">Competition</th><th className="num" scope="col">Catches</th><th className="num" scope="col">Stumpings</th><th className="num" scope="col">Run outs</th></tr></thead>
@@ -125,7 +173,7 @@ export default function Player() {
         </section>
       )}
 
-      {p.recent.length > 0 && (
+      {p.recent && p.recent.length > 0 && (
         <section className="player-section" aria-labelledby="p-recent">
           <h2 id="p-recent">Recent matches</h2>
           <div className="table-wrap">

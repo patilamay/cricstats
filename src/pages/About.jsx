@@ -19,11 +19,24 @@ export default function About() {
         The latest match currently included was played on {date(meta.latestMatch)}.
       </p>
 
+      <h2>Complete careers: Cricsheet plus Wikipedia</h2>
+      <p>
+        Ball-by-ball records only exist for international matches from about 2001 onward. For full careers in Tests, ODIs and T20Is,
+        the site combines two sources: each player's career totals from their{' '}
+        <a href="https://en.wikipedia.org/">Wikipedia</a> page, as of the date the page gives, plus every match Cricsheet has recorded
+        since that date. When Cricsheet covers a player's whole career, its figures are used on their own.
+        These combined figures appear in the All-time tables, the home page leaders and the International career table on player pages.
+      </p>
+      <p>
+        Wikipedia figures are maintained by volunteers and can occasionally be out of date or wrong. Wikipedia content is available under{' '}
+        <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+        {meta.wiki && ` Career totals currently come from ${num(meta.wiki.players)} Wikipedia articles.`}
+      </p>
+
       <h2>What is and isn't covered</h2>
       <p>
-        Figures only count matches that Cricsheet has ball-by-ball data for. For older eras, especially Tests and ODIs from before the
-        early 2000s, Cricsheet's coverage is incomplete, so career totals for players from those years will be lower than their official figures.
-        Recent careers are close to complete.
+        Scorecards, records, season tables, and the batting, bowling and fielding tables count only matches with ball-by-ball data.
+        For Tests and ODIs that means roughly 2001 onward; leagues are covered from their first season.
       </p>
       <ul>
         {meta.competitions.map((c) => (
