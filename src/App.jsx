@@ -12,6 +12,9 @@ import Players from './pages/Players.jsx';
 import Glossary from './pages/Glossary.jsx';
 import About from './pages/About.jsx';
 import NotFound from './pages/NotFound.jsx';
+import { lazy, Suspense } from 'react';
+
+const Ask = lazy(() => import('./pages/Ask.jsx'));
 
 const MetaContext = createContext(null);
 export const useMeta = () => useContext(MetaContext);
@@ -49,6 +52,7 @@ export default function App() {
             <Route path="/player/:id" element={<Player />} />
             <Route path="/results" element={<Results />} />
             <Route path="/match/:id" element={<Match />} />
+            <Route path="/ask" element={<Suspense fallback={<div className="page"><p className="loading">Loading…</p></div>}><Ask /></Suspense>} />
             <Route path="/glossary" element={<Glossary />} />
             <Route path="/about" element={<About />} />
             <Route path="*" element={<NotFound />} />

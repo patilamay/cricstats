@@ -1,0 +1,21 @@
+name = "cricstats-ask"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+[vars]
+# Sites allowed to call this worker (comma-separated).
+ALLOWED_ORIGINS = "https://patilamay.github.io,http://localhost:5173,http://localhost:4173"
+# Claude model used to write queries and answers.
+MODEL = "claude-haiku-5-5"
+
+# At most 8 questions per visitor per minute (each question makes 2 requests).
+[[ratelimits]]
+name = "LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 16
+  period = 60
+
+# The API key is a secret, never stored here:
+#   npx wrangler secret put ANTHROPIC_API_KEY

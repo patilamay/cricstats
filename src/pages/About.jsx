@@ -19,6 +19,13 @@ export default function About() {
         The latest match currently included was played on {date(meta.latestMatch)}.
       </p>
 
+      <h2>Asking questions</h2>
+      <p>
+        On the <Link to="/ask">Ask</Link> page you can type a question in plain English. An AI model (Claude, by Anthropic) turns it into a database query,
+        which then runs in your browser against the same data as the rest of the site. The model sees your question and the first rows of the result, nothing else about you.
+        The query is shown with every answer, because the model can misread a question.
+      </p>
+
       <h2>Complete careers: Cricsheet plus Wikipedia</h2>
       <p>
         Ball-by-ball records only exist for international matches from about 2001 onward. For full careers in Tests, ODIs and T20Is,

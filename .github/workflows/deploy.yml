@@ -79,6 +79,22 @@ jobs:
         run: npm run build
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+          VITE_ASK_URL: ${{ vars.ASK_URL }}
+
+      # The Ask page queries these Parquet files in the browser (DuckDB-WASM, HTTP range requests).
+      - name: Add the Parquet tables to the site
+        run: |
+          mkdir -p dist/db
+          cp .cache/db/parquet/*.parquet dist/db/
+          # Self-host DuckDB's Parquet reader so the Ask page doesn't depend on extensions.duckdb.org.
+          # (If this fails the page still works: DuckDB falls back to downloading it from there.)
+          v=$(grep -ao 'v1\.[0-9]\+\.[0-9]\+' node_modules/@duckdb/duckdb-wasm/dist/duckdb-eh.wasm | sort -uV | tail -1)
+          for p in wasm_eh wasm_mvp; do
+            mkdir -p "dist/duckdb-ext/$v/$p"
+            curl -fsSL --retry 3 -o "dist/duckdb-ext/$v/$p/parquet.duckdb_extension.wasm" \
+              "https://extensions.duckdb.org/$v/$p/parquet.duckdb_extension.wasm" || echo "::warning::Could not copy the DuckDB Parquet extension ($v/$p)"
+          done
+          du -sh dist/db dist/duckdb-ext dist
 
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
