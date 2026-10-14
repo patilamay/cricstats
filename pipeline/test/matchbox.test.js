@@ -102,6 +102,8 @@ test('score, performer, date and team helpers', () => {
   assert.equal(parseScore(''), null);
   assert.deepEqual(parseScore('0/19 (5 overs)'), { r: 19, w: 0, dec: false, overs: '5', fo: false });
   assert.equal(parseScore('3/250').r, 250);
+  assert.deepEqual(parseScore('27–0 (6.3 overs)'), { r: 27, w: 0, dec: false, overs: '6.3', fo: false });
+  assert.equal(parseScore('480–5d').w, 5);
   assert.equal(parseBatting('[[A B]] 101 (150)<br />[[C D|C. D.]] 55* (60)').length, 2);
   assert.equal(parseBatting('[[C D|C. D.]] 55* (60)')[0].no, true);
   assert.equal(parseBowling('[[E F]] 4/30 (10 overs)<br>[[G H]] 2/20')[1].w, 2);

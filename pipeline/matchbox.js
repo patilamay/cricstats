@@ -106,7 +106,7 @@ export function teamName(v) {
 export function parseScore(v) {
   const s = clean(v);
   if (!s) return null;
-  const m = /(\d+)(?:\s*\/\s*(\d+))?\s*(d\b|dec\.?|declared)?/i.exec(s);
+  const m = /(\d+)(?:\s*[\/–—-]\s*(\d+))?\s*(d\b|dec\.?|declared)?/i.exec(s); // 245, 334/4, 27–0
   if (!m) return null;
   const ov = /(\d+(?:\.\d)?)\s*overs?/i.exec(s);
   let r = Number(m[1]);
