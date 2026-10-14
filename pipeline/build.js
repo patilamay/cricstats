@@ -4,6 +4,8 @@
 //   node pipeline/build.js                       download from cricsheet.org (used by the daily GitHub Action)
 //   node pipeline/build.js --local <dir>         read <dir>/<competition id>/*.json instead (offline / dev)
 //   node pipeline/build.js --only ipl,t20i-m     limit to some competitions
+//   node pipeline/build.js --no-wiki             skip Wikipedia career totals
+//   node pipeline/build.js --wiki-local <dir>    read <dir>/people.csv and <dir>/wiki.json instead of downloading
 //
 // Output goes to public/data/ (served as-is by the site).
 
@@ -15,6 +17,8 @@ import { COMPETITIONS, CRICSHEET_BASE } from './competitions.js';
 import { parseMatch } from './parse.js';
 import { CompetitionAggregator } from './aggregate.js';
 import { buildLeaders } from './leaders.js';
+import { fetchWikiCareers, parseRegister } from './wiki.js';
+import { WIKI_FORMAT, combine } from './careers.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -24,9 +28,9 @@ const LOCAL = opt('--local');
 const ONLY = opt('--only') ? new Set(opt('--only').split(',')) : null;
 const OUT = path.resolve(opt('--out') || path.join(ROOT, 'public', 'data'));
 const CACHE = path.resolve(opt('--cache') || path.join(ROOT, '.cache'));
-const RECENT_SCORECARDS = 400; // most recent matches across all competitions
-const PER_COMP_SCORECARDS = 120; // plus the most recent N in each competition
-const PER_COMP_RESULTS = 250;
+const NO_WIKI = args.includes('--no-wiki');
+const WIKI_LOCAL = opt('--wiki-local');
+const PER_COMP_RESULTS = Infinity; // full results history for every competition
 const PLAYER_RECENT = 15;
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
@@ -90,7 +94,92 @@ function summary(m, compId) {
 }
 
 function shardOf(id) {
+  if (/^w\d+$/.test(id)) return `w${Number(id.slice(1)) % 32}`; // Wikipedia-only players
   return /^[0-9a-f]{2}/.test(id) ? id.slice(0, 2) : 'xx';
+}
+
+// Display name from Wikipedia: infobox name, else the article title without "(cricketer)" etc.
+// Display name: the Wikipedia article title without a disambiguator like "(cricketer)".
+// (Infobox names often carry honours and titles: "Sir ...", "... SI", "The Baroness ...".)
+function wikiName(w) {
+  return w.title.replace(/\s*\([^)]*\)\s*$/, '');
+}
+
+async function loadWikiSources() {
+  if (WIKI_LOCAL) {
+    const dir = path.resolve(WIKI_LOCAL);
+    const register = parseRegister(fs.readFileSync(path.join(dir, 'people.csv'), 'utf8'));
+    const wiki = new Map(Object.entries(JSON.parse(fs.readFileSync(path.join(dir, 'wiki.json'), 'utf8'))));
+    return { register, wiki };
+  }
+  const regFile = path.join(CACHE, 'people.csv');
+  log('downloading Cricsheet player register');
+  await download('https://cricsheet.org/register/people.csv', regFile);
+  const register = parseRegister(fs.readFileSync(regFile, 'utf8'));
+  const wiki = await fetchWikiCareers({ cacheDir: path.join(CACHE, 'wiki') });
+  return { register, wiki };
+}
+
+async function addWikipediaCareers({ compData, people, leaders, compMeta, tmpOut }) {
+  const { register, wiki } = await loadWikiSources();
+  log(`register: ${register.size} ESPNcricinfo links; Wikipedia: ${wiki.size} players`);
+
+  // Attach each Wikipedia player to a Cricsheet id, or give them their own id.
+  const byPlayer = new Map(); // site player id -> wiki entry
+  for (const [cid, w] of wiki) {
+    const csId = register.get(cid);
+    const id = csId && people.has(csId) ? csId : `w${cid}`;
+    if (!byPlayer.has(id)) byPlayer.set(id, w);
+  }
+
+  const stats = { matched: 0, wikiOnly: 0, byComp: {} };
+  for (const [compId, { comp, rows, ledger }] of compData) {
+    const fmt = WIKI_FORMAT[compId];
+    if (!fmt) continue;
+    const csRows = new Map(rows.map((r) => [r.id, r]));
+    const ids = new Set(csRows.keys());
+    for (const [id, w] of byPlayer) if (w.formats && w.formats[fmt]) ids.add(id);
+
+    const table = [];
+    const src = { c: 0, w: 0, wc: 0 };
+    for (const id of ids) {
+      const w = byPlayer.get(id);
+      const col = w && w.formats ? w.formats[fmt] : null;
+      const csRow = csRows.get(id) || null;
+      const career = combine({ wiki: col ? { asof: w.asof, f: col } : null, csRow, ledger: ledger.get(id) || [] });
+      if (!career) continue;
+      src[career.src] += 1;
+      const name = w ? wikiName(w) : csRow.n;
+      // When Wikipedia supplies most of a career (e.g. matches Cricsheet withholds), lead with the player's country.
+      const country = w && w.country && w.country.length < 40 ? w.country : null;
+      const csTeams = csRow ? csRow.t : [];
+      const teams = country && (career.src !== 'c' || !csTeams.length) ? [country, ...csTeams.filter((t) => t !== country)] : csTeams;
+      table.push({ id, n: name, t: teams, ...career });
+
+      let p = people.get(id);
+      if (!p) { p = { n: name, comps: {}, recent: [] }; people.set(id, p); }
+      if (w) { p.fn = wikiName(w); p.wiki = w.title; if (country) p.country = country; }
+      p.career = p.career || {};
+      p.career[compId] = career;
+    }
+    table.sort((a, b) => b.r - a.r);
+    writeJson(path.join(tmpOut, 'alltime', `${compId}.json`), table);
+    stats.byComp[compId] = { players: table.length, ...src };
+
+    // Home page: all-time runs and wickets leaders replace the ball-by-ball-era ones.
+    const top = (key, sub) => [...table].sort((a, b) => b[key] - a[key]).slice(0, 5).map((r) => ({ id: r.id, n: r.n, t: r.t.slice(0, 2), v: r[key], sub: sub(r) }));
+    const allTime = [
+      { key: 'runs', title: 'Most runs', unit: 'runs', alltime: true, rows: top('r', (r) => `${r.m} matches, avg ${r.avg ?? '–'}`) },
+      { key: 'wickets', title: 'Most wickets', unit: 'wkts', alltime: true, rows: top('wk', (r) => `${r.m} matches, avg ${r.bavg ?? '–'}`) },
+    ];
+    leaders[compId] = [...allTime, ...(leaders[compId] || []).filter((b) => b.key !== 'runs' && b.key !== 'wickets')];
+    const cm = compMeta.find((c) => c.id === comp.id);
+    if (cm) cm.alltime = true;
+  }
+  for (const id of byPlayer.keys()) { if (people.has(id)) { if (id.startsWith('w')) stats.wikiOnly += 1; else stats.matched += 1; } }
+  log(`all-time tables: ${JSON.stringify(stats)}`);
+  const rejected = wiki.rejected || [];
+  return { players: wiki.size, matched: stats.matched, wikiOnly: stats.wikiOnly, byComp: stats.byComp, rejectedCount: rejected.length, rejectedSample: rejected.slice(0, 25), fetchedAt: new Date().toISOString() };
 }
 
 async function main() {
@@ -104,6 +193,7 @@ async function main() {
   const people = new Map(); // id -> { n, comps: {}, recent: [] }
   const compMeta = [];
   const leaders = {};
+  const compData = new Map(); // comp id -> { rows, ledger }
   const tmpOut = OUT + '.tmp';
   fs.rmSync(tmpOut, { recursive: true, force: true });
 
@@ -176,6 +266,7 @@ async function main() {
     compSummaries.sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.id.localeCompare(a.id));
     writeJson(path.join(base, 'results.json'), compSummaries.slice(0, PER_COMP_RESULTS));
     leaders[comp.id] = buildLeaders(comp, result.rows, result.records);
+    compData.set(comp.id, { comp, rows: result.rows, ledger: agg.ledger });
 
     for (const row of result.rows) {
       let p = people.get(row.id);
@@ -187,7 +278,6 @@ async function main() {
     compMeta.push({
       id, name, short, group, format, gender, ballsOnly: !!ballsOnly, ...result.summary,
       latestSeason: result.seasons[0] ? result.seasons[0].key : null,
-      _recent: compSummaries.slice(0, PER_COMP_SCORECARDS).map((s) => s.id),
     });
   }
 
@@ -199,29 +289,48 @@ async function main() {
   const recent = allSummaries.filter((s) => (seenIds.has(s.id) ? false : seenIds.add(s.id)));
   writeJson(path.join(tmpOut, 'recent.json'), recent.slice(0, 80));
 
-  const keep = new Set(recent.slice(0, RECENT_SCORECARDS).map((s) => s.id));
-  for (const c of compMeta) { for (const id of c._recent) keep.add(id); delete c._recent; }
+  const keep = new Set(recent.map((s) => s.id)); // every scorecard
   fs.mkdirSync(path.join(tmpOut, 'match'), { recursive: true });
   for (const id of keep) {
     const src = path.join(scratch, `${id}.json`);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(tmpOut, 'match', `${id}.json`));
   }
 
+  // All-time international careers: Wikipedia totals for older matches + Cricsheet for newer ones
+  let wikiMeta = null;
+  if (!NO_WIKI && [...compData.keys()].some((id) => WIKI_FORMAT[id])) {
+    try {
+      wikiMeta = await addWikipediaCareers({ compData, people, leaders, compMeta, tmpOut });
+    } catch (err) {
+      log(`Wikipedia step failed, publishing Cricsheet-only stats: ${err.stack || err.message}`);
+    }
+  }
+
   // Players: search index + sharded detail files
   const shards = new Map();
   const index = [];
   for (const [id, p] of people) {
-    if (!Object.keys(p.comps).length) continue;
+    if (!Object.keys(p.comps).length && !p.career) continue;
     p.recent.sort((a, b) => (b.d || '').localeCompare(a.d || ''));
     p.recent = p.recent.slice(0, PLAYER_RECENT);
     const teams = new Map();
     let matches = 0;
-    for (const c of Object.values(p.comps)) {
+    for (const [cid, c] of Object.entries(p.comps)) {
+      const car = p.career && p.career[cid];
+      const m = car ? car.m : c.m;
+      matches += m;
+      if (car && car.src !== 'c' && p.country) teams.set(p.country, (teams.get(p.country) || 0) + m);
+      else for (const t of c.t || []) teams.set(t, (teams.get(t) || 0) + m);
+    }
+    for (const [cid, c] of Object.entries(p.career || {})) {
+      if (p.comps[cid]) continue;
       matches += c.m;
-      for (const t of c.t || []) teams.set(t, (teams.get(t) || 0) + c.m);
+      if (p.country) teams.set(p.country, (teams.get(p.country) || 0) + c.m);
     }
     const topTeams = [...teams.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2).map((t) => t[0]);
-    index.push([id, p.n, topTeams.join(', '), matches]);
+    const row = [id, p.fn || p.n, topTeams.join(', '), matches];
+    if (p.fn && p.fn !== p.n) row.push(p.n); // Cricsheet's name, also searchable
+    index.push(row);
     const sh = shardOf(id);
     if (!shards.has(sh)) shards.set(sh, {});
     shards.get(sh)[id] = p;
@@ -237,6 +346,7 @@ async function main() {
     source: LOCAL ? 'local sample data' : 'cricsheet.org',
     competitions: compMeta,
     totals: { matches: recent.length, players: index.length, scorecards: keep.size },
+    wiki: wikiMeta,
   });
 
   // Swap the new data in only after everything succeeded.

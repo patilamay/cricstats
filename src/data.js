@@ -31,4 +31,7 @@ export function useData(path) {
   return state;
 }
 
-export const playerShard = (id) => (/^[0-9a-f]{2}/.test(id) ? id.slice(0, 2) : 'xx');
+export const playerShard = (id) => {
+  if (/^w\d+$/.test(id)) return `w${Number(id.slice(1)) % 32}`; // Wikipedia-only players
+  return /^[0-9a-f]{2}/.test(id) ? id.slice(0, 2) : 'xx';
+};

@@ -239,32 +239,120 @@ function CompResults({ comp }) {
   return <ul className="results-list">{data.map((m) => <ResultRow key={m.id} m={m} showComp={false} />)}</ul>;
 }
 
+const SRC_LABEL = { c: 'Ball-by-ball', w: 'Wikipedia', wc: 'Wikipedia + ball-by-ball' };
+
+function AllTime({ comp }) {
+  const { data, error } = useData(`alltime/${comp.id}.json`);
+  const [view, setView] = useState('batting');
+  const [q, setQ] = useState('');
+  const [team, setTeam] = useState('');
+  const [minM, setMinM] = useState('');
+  const teams = useMemo(() => (data ? [...new Set(data.flatMap((r) => r.t))].sort() : []), [data]);
+  const rows = useMemo(() => {
+    if (!data) return [];
+    const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+    const min = Number(minM) || 0;
+    return data.filter((r) => (!team || r.t.includes(team))
+      && (!terms.length || terms.every((t) => r.n.toLowerCase().includes(t)))
+      && r.m >= min
+      && (view === 'batting' || r.balls > 0 || r.ct || r.st));
+  }, [data, q, team, minM, view]);
+
+  if (error) return <p className="notice">All-time figures could not be loaded.</p>;
+  if (!data) return <p className="loading">Loading all-time figures…</p>;
+
+  const name = { key: 'name', label: 'Player', text: true, get: (r) => r.n, render: (r) => <PlayerLink id={r.id} name={r.n} /> };
+  const teamC = { key: 'team', label: 'Team', text: true, get: (r) => r.t.join(', '), render: (r) => <span className="team-cell">{r.t.join(', ')}</span> };
+  const m = { key: 'm', label: 'M', title: 'Matches', get: (r) => r.m };
+  const src = { key: 'src', label: 'Source', text: true, get: (r) => r.src, render: (r) => <span className={`src-tag src-${r.src}`} title={r.asof ? `Wikipedia figures as of ${date(r.asof)}` : undefined}>{SRC_LABEL[r.src]}</span> };
+  const batting = [
+    name, teamC, m,
+    { key: 'r', label: 'Runs', get: (r) => r.r, render: (r) => num(r.r) },
+    { key: 'avg', label: 'Avg', title: 'Batting average', get: (r) => r.avg, render: (r) => dec(r.avg) },
+    { key: 'c100', label: '100', title: 'Hundreds', get: (r) => r.c100 },
+    { key: 'c50', label: '50', title: 'Fifties', get: (r) => r.c50 },
+    { key: 'hs', label: 'HS', title: 'Highest score', get: (r) => r.hs, render: (r) => (r.hs == null ? '–' : `${r.hs}${r.hsNo ? '*' : ''}`) },
+    src,
+  ];
+  const bbiValue = (s) => { if (!s) return null; const [wk, rr] = s.split('/').map(Number); return wk * 1000 - rr; };
+  const bowling = [
+    name, teamC, m,
+    { key: 'balls', label: comp.ballsOnly ? 'Balls' : 'Overs', get: (r) => r.balls, render: (r) => overs(r.balls, comp.ballsOnly) },
+    { key: 'wk', label: 'Wkts', get: (r) => r.wk },
+    { key: 'bavg', label: 'Avg', title: 'Bowling average', get: (r) => r.bavg, render: (r) => dec(r.bavg), desc: false },
+    { key: 'econ', label: 'Econ', title: 'Economy rate', get: (r) => r.econ, render: (r) => dec(r.econ), desc: false },
+    { key: 'w5', label: '5w', title: 'Five wickets in an innings', get: (r) => r.w5 },
+    ...(comp.format === 'Test' ? [{ key: 'w10', label: '10w', title: 'Ten wickets in a match', get: (r) => r.w10 }] : []),
+    { key: 'bbi', label: 'BBI', title: 'Best bowling in an innings', get: (r) => bbiValue(r.bbi), render: (r) => r.bbi || '–' },
+    { key: 'ct', label: 'Ct', title: 'Catches', get: (r) => r.ct },
+    { key: 'st', label: 'St', title: 'Stumpings', get: (r) => r.st },
+    src,
+  ];
+
+  return (
+    <>
+      <p className="section-note">
+        Complete careers. Matches before ball-by-ball records began come from players' Wikipedia pages; everything since comes from Cricsheet and is updated daily.
+      </p>
+      <div className="season-picker" role="group" aria-label="Choose a table">
+        <button type="button" className={view === 'batting' ? 'on' : ''} aria-pressed={view === 'batting'} onClick={() => setView('batting')}>Batting</button>
+        <button type="button" className={view === 'bowling' ? 'on' : ''} aria-pressed={view === 'bowling'} onClick={() => setView('bowling')}>Bowling and fielding</button>
+      </div>
+      <div className="filters">
+        <label><span>Player</span><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter by name" /></label>
+        <label>
+          <span>Team</span>
+          <select value={team} onChange={(e) => setTeam(e.target.value)}>
+            <option value="">All teams</option>
+            {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </label>
+        <label className="narrow"><span>Min matches</span><input type="number" min="0" inputMode="numeric" value={minM} onChange={(e) => setMinM(e.target.value)} placeholder="0" /></label>
+      </div>
+      <DataTable
+        key={view}
+        rows={rows}
+        columns={view === 'batting' ? batting : bowling}
+        initialSort={view === 'batting' ? { key: 'r', desc: true } : { key: 'wk', desc: true }}
+        noun="players"
+        caption={`${comp.name} all-time ${view}`}
+        emptyText="No players match these filters."
+      />
+    </>
+  );
+}
+
 export default function Stats() {
-  const { comp: compId, tab = 'batting' } = useParams();
   const meta = useMeta();
-  const comp = useComp(compId);
+  const params = useParams();
+  const comp = useComp(params.comp);
+  const tabs = comp && comp.alltime ? [['alltime', 'All-time'], ...TABS] : TABS;
+  const tab = params.tab || tabs[0][0];
   const navigate = useNavigate();
   const needsRows = ['batting', 'bowling', 'fielding'].includes(tab);
   const { data: rows, error } = useData(comp && needsRows ? `comp/${comp.id}/stats.json` : null);
 
   if (!comp) return <Navigate to={`/stats/${meta.competitions[0].id}`} replace />;
-  if (!TABS.some(([t]) => t === tab)) return <Navigate to={`/stats/${comp.id}`} replace />;
+  if (!tabs.some(([t]) => t === tab)) return <Navigate to={`/stats/${comp.id}`} replace />;
 
   return (
     <div className="page stats-page">
       <div className="stats-head">
         <div>
           <h1>{comp.name}</h1>
-          <p className="muted">{num(comp.matches)} matches from {date(comp.from)} to {date(comp.to)}</p>
+          <p className="muted">
+            {tab === 'alltime' ? 'Every international career, all-time' : `${num(comp.matches)} matches with ball-by-ball data, ${date(comp.from)} to ${date(comp.to)}`}
+          </p>
         </div>
-        <CompPicker value={comp.id} onChange={(id) => navigate(`/stats/${id}/${tab}`)} label="Switch competition" />
+        <CompPicker value={comp.id} onChange={(id) => navigate(`/stats/${id}`)} label="Switch competition" />
       </div>
       <nav className="tabs" aria-label={`${comp.name} sections`}>
-        {TABS.map(([t, label]) => (
+        {tabs.map(([t, label]) => (
           <NavLink key={t} to={`/stats/${comp.id}/${t}`} className={t === tab ? 'active' : ''} end>{label}</NavLink>
         ))}
       </nav>
       <div className="tab-body">
+        {tab === 'alltime' && <AllTime comp={comp} />}
         {needsRows && (error ? <p className="notice">The {tab} table could not be loaded.</p>
           : !rows ? <p className="loading">Loading {tab}…</p>
             : <PlayerTable comp={comp} rows={rows} kind={tab} />)}

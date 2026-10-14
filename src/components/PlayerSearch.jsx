@@ -9,7 +9,7 @@ export function searchPlayers(index, q, limit = 8) {
   if (!terms.length) return [];
   const out = [];
   for (const row of index) {
-    const name = norm(row[1]);
+    const name = norm(row[4] ? `${row[1]} ${row[4]}` : row[1]);
     if (terms.every((t) => name.includes(t))) {
       out.push(row);
       if (out.length >= limit) break;

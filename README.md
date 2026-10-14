@@ -8,8 +8,9 @@ There is no server or database. Once a day a GitHub Action:
 
 1. downloads each competition's zip from Cricsheet,
 2. computes every stat from the ball-by-ball records (`pipeline/`),
-3. writes the results as static JSON into `public/data/`,
-4. builds the React site and publishes it to GitHub Pages.
+3. for international formats, adds complete careers: each player's totals from their Wikipedia infobox (as of the date it gives) plus every Cricsheet match since that date (`pipeline/wiki.js`, `pipeline/careers.js`),
+4. writes the results as static JSON into `public/data/`,
+5. builds the React site and publishes it to GitHub Pages.
 
 If a download or test fails, the run stops and the previous version of the site stays live.
 
@@ -19,6 +20,10 @@ pipeline/
   parse.js          one match -> scorecard; all the counting rules live here
   aggregate.js      scorecards -> career stats, records, team results, seasons
   leaders.js        home-page leaderboards and qualification rules
+  infobox.js        parses career stats from Wikipedia's {{Infobox cricketer}}
+  wiki.js           Wikidata + Wikipedia download (cached; only changed pages refetched)
+  careers.js        merges Wikipedia totals with Cricsheet matches after their date
+  report.js         prints a data-quality summary in the GitHub Actions run
   build.js          download, aggregate, write public/data
   test/             unit tests for the counting rules
   sample/           synthetic data generator for offline development
@@ -49,4 +54,4 @@ Balls faced include no-balls but not wides. Bowlers are charged runs off the bat
 
 ## Data licence
 
-Match data © Cricsheet, available under the [Open Data Commons Attribution License](https://opendatacommons.org/licenses/by/1-0/). The site credits Cricsheet in its footer and About page, as the licence requires.
+Match data © Cricsheet, available under the [Open Data Commons Attribution License](https://opendatacommons.org/licenses/by/1-0/). Career totals for older matches come from Wikipedia, available under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). The site credits both in its footer and About page.
