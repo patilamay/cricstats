@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMeta } from '../App.jsx';
 import { date, score } from '../format.js';
@@ -34,5 +35,21 @@ export function ResultRow({ m, showComp = true, hasCard = true }) {
         {hasCard && <Link to={`/match/${m.id}`} className="scorecard-link" aria-label={`Scorecard: ${m.teams.join(' v ')}, ${date(m.date)}`}>Scorecard</Link>}
       </div>
     </li>
+  );
+}
+
+// Long result lists render in pages of 60 with a "Show more" button.
+export function ResultList({ matches, showComp = true, step = 60 }) {
+  const [n, setN] = useState(step);
+  return (
+    <>
+      <ul className="results-list">{matches.slice(0, n).map((m) => <ResultRow key={m.id} m={m} showComp={showComp} />)}</ul>
+      {matches.length > n && (
+        <div className="show-more">
+          <button type="button" onClick={() => setN(n + step * 3)}>Show more results</button>
+          <span className="muted">{(matches.length - n).toLocaleString('en-GB')} older matches</span>
+        </div>
+      )}
+    </>
   );
 }

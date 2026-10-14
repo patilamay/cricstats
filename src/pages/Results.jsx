@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMeta } from '../App.jsx';
 import { useData } from '../data.js';
-import { ResultRow } from '../components/Bits.jsx';
+import { ResultList } from '../components/Bits.jsx';
 
 export default function Results() {
   const meta = useMeta();
@@ -26,7 +26,7 @@ export default function Results() {
       </div>
       {error ? <p className="notice">Results could not be loaded.</p>
         : !data ? <p className="loading">Loading results…</p>
-          : <ul className="results-list">{data.map((m) => <ResultRow key={m.id} m={m} showComp={comp === 'all'} />)}</ul>}
+          : <ResultList key={comp} matches={data} showComp={comp === 'all'} />}
     </div>
   );
 }

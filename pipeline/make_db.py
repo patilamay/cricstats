@@ -14,7 +14,7 @@ import time
 
 import duckdb
 
-TABLES = ["competitions", "matches", "innings", "deliveries", "batting", "bowling", "players", "careers"]
+TABLES = ["competitions", "matches", "innings", "deliveries", "batting", "bowling", "players", "careers", "history_matches", "history_innings", "history_performances"]
 
 TYPES = {
     "matches": {"match_id": "VARCHAR", "start_date": "DATE", "end_date": "DATE", "season": "VARCHAR", "match_number": "VARCHAR"},
@@ -24,6 +24,9 @@ TYPES = {
     "bowling": {"match_id": "VARCHAR", "overs": "VARCHAR"},
     "players": {"player_id": "VARCHAR", "cricinfo_id": "VARCHAR"},
     "careers": {"player_id": "VARCHAR", "wikipedia_as_of": "DATE", "best_bowling": "VARCHAR"},
+    "history_matches": {"match_id": "VARCHAR", "start_date": "DATE", "cricinfo_id": "VARCHAR"},
+    "history_innings": {"match_id": "VARCHAR", "overs": "VARCHAR"},
+    "history_performances": {"match_id": "VARCHAR", "player_id": "VARCHAR", "overs": "VARCHAR"},
 }
 
 VIEWS = {
@@ -69,6 +72,9 @@ Built {built} from Cricsheet ball-by-ball data (ODC-BY 1.0) and Wikipedia career
 - batting / bowling: scorecard lines per innings
 - players: every player, with ESPNcricinfo ID and Wikipedia article where known
 - careers: complete international careers (Wikipedia totals as of a date + Cricsheet matches since)
+- history_matches / history_innings / history_performances: international matches without ball-by-ball
+  data (mostly before 2002), from Wikipedia match summaries: every innings total, the top performers of
+  each innings, and full scorecards for the few matches Wikipedia records in full
 
 ## Views
 - batting_by_competition, bowling_by_competition: career figures from the ball-by-ball era
@@ -80,6 +86,14 @@ Built {built} from Cricsheet ball-by-ball data (ODC-BY 1.0) and Wikipedia career
     -- Most Test runs, all-time
     SELECT player, matches, runs, batting_avg FROM careers
     WHERE competition_id = 'test-m' ORDER BY runs DESC LIMIT 10;
+
+    -- Lowest Test totals ever, ball-by-ball era and earlier combined
+    SELECT batting_team, runs, start_date FROM history_innings JOIN history_matches USING (match_id)
+    WHERE competition_id = 'test-m' AND wickets = 10
+    UNION ALL
+    SELECT batting_team, runs, start_date FROM innings JOIN matches USING (match_id)
+    WHERE competition_id = 'test-m' AND wickets = 10
+    ORDER BY runs LIMIT 10;
 
     -- Most sixes in IPL history
     SELECT player, sum(sixes) AS sixes FROM batting JOIN matches USING (match_id)

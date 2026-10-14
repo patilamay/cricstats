@@ -179,3 +179,27 @@ for (const [i, name] of veterans.entries()) {
 }
 fs.writeFileSync(path.join(wikiDir, 'wiki.json'), JSON.stringify(wiki));
 console.log(`wrote sample Wikipedia data for ${Object.keys(wiki).length} players to ${wikiDir}`);
+
+// Synthetic historical matches (the shape pipeline/history.js produces), for local development.
+const t = (team, r, w, bat, bowl, extra = {}) => ({ team, n: 1, r, w, dec: false, overs: null, fo: false, bat, bowl, ...extra });
+const history = {
+  'test-m': [
+    { kind: 'two-innings cricket match', comp: 'test-m', date: '1902-08-11', teams: ['Avalon', 'Borealis'], national: true, women: false,
+      innings: [t('Avalon', 324, 10, [{ name: 'Arthur Pemberton', title: 'Arthur Pemberton', runs: 287, no: false, balls: null }], [{ name: 'Wes Halloran', title: 'Wes Halloran (cricketer)', w: 4, r: 88, overs: '31' }]),
+        t('Borealis', 41, 10, [{ name: 'Old Timer', title: null, runs: 12, no: false, balls: null }], [{ name: 'Sam Old', title: null, w: 7, r: 9, overs: '11.2' }]),
+        t('Borealis', 77, 10, [{ name: 'Old Timer', title: null, runs: 30, no: true, balls: null }], [{ name: 'Sam Old', title: null, w: 6, r: 30, overs: '15' }])],
+      result: 'Avalon won by an innings and 206 runs', venue: 'Northfield Oval', umpires: 'A Ump and B Ump', toss: 'Avalon won the toss and elected to bat.', pom: null, cricinfo: '62999', article: 'Borealis cricket team in Avalon in 1902' },
+    { kind: 'two-innings cricket match', comp: 'test-m', date: '1985-01-02', teams: ['Caledon', 'Dravia'], national: true, women: false,
+      innings: [t('Caledon', 702, 6, [{ name: 'Big Hitter', title: null, runs: 365, no: true, balls: 614 }], [{ name: 'Tired Bowler', title: null, w: 3, r: 201, overs: '70' }], { dec: true }),
+        t('Dravia', 288, 10, [{ name: 'Gritty Opener', title: null, runs: 101, no: false, balls: 300 }], [{ name: 'Quick One', title: null, w: 5, r: 66, overs: '22' }])],
+      result: 'Match drawn', venue: 'Harbour Park', umpires: null, toss: null, pom: 'Big Hitter', cricinfo: '63500', article: 'Dravian cricket team in Caledon in 1984–85',
+      full: [{ team: 'Caledon', bat: [{ name: 'Big Hitter', title: null, how: 'not out', runs: 365, balls: 614, fours: 43, sixes: 1, no: true }, { name: 'Partner', title: null, how: 'c Keeper b Quick One', runs: 90, balls: 180, fours: 9, sixes: 0, no: false }], bowl: [{ name: 'Quick One', title: null, overs: '40', maidens: 6, runs: 160, wkts: 2 }], extras: 21, total: 702, wkts: 6, overs: '210', declared: true }] },
+  ],
+  'odi-m': [
+    { kind: 'single-innings cricket match', comp: 'odi-m', date: '1983-06-25', teams: ['Estmark', 'Fairhaven'], national: true, women: false,
+      innings: [t('Estmark', 183, 10, [{ name: 'Opener One', title: null, runs: 38, no: false, balls: 57 }], [{ name: 'Fast Man', title: null, w: 3, r: 32, overs: '10' }], { overs: '54.4' }),
+        t('Fairhaven', 140, 10, [{ name: 'Star Bat', title: null, runs: 33, no: false, balls: 28 }], [{ name: 'Medium Pacer', title: null, w: 3, r: 12, overs: '7' }], { overs: '52' })],
+      result: 'Estmark won by 43 runs', venue: "Lord's, London", umpires: 'X and Y', toss: null, pom: 'Medium Pacer', cricinfo: '65090', article: 'Sample World Cup final' },
+  ],
+};
+fs.writeFileSync(path.join(wikiDir, 'history.json'), JSON.stringify(history));

@@ -12,21 +12,21 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseInfobox } from './infobox.js';
 
-const UA = 'cricstats-site-builder/1.0 (https://github.com/patilamay/cricstats; data refresh once per day)';
+export const UA = 'CricStatsBot/1.0 (https://github.com/patilamay/cricstats; data refresh for a cricket stats site) node/22';
 const SPARQL = 'https://query.wikidata.org/sparql';
-const API = 'https://en.wikipedia.org/w/api.php';
+export const API = 'https://en.wikipedia.org/w/api.php';
 const BATCH = 50;
-const CONCURRENCY = 3;
+const CONCURRENCY = 2; // Wikimedia asks unauthenticated clients to keep concurrency low
 const PARSER_VERSION = 5; // bump to force re-parsing of cached pages after parser changes
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), '[wiki]', ...a);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function getJson(url, init = {}, tries = 6) {
+export async function getJson(url, init = {}, tries = 6) {
   for (let attempt = 1; ; attempt++) {
     let res;
     try {
-      res = await fetch(url, { ...init, headers: { 'User-Agent': UA, Accept: 'application/json', ...(init.headers || {}) } });
+      res = await fetch(url, { ...init, headers: { 'User-Agent': UA, 'Api-User-Agent': UA, Accept: 'application/json', ...(init.headers || {}) } });
     } catch (err) {
       if (attempt >= tries) throw err;
       await sleep(2000 * attempt);
@@ -41,7 +41,7 @@ async function getJson(url, init = {}, tries = 6) {
       return json;
     }
     if ((res.status === 429 || res.status >= 500) && attempt < tries) {
-      const retry = Number(res.headers.get('retry-after')) || 3 * attempt;
+      const retry = Math.max(5, Number(res.headers.get('retry-after')) || 5 * attempt);
       await sleep(retry * 1000);
       continue;
     }
@@ -70,7 +70,7 @@ async function cricinfoTitles() {
   return byTitle;
 }
 
-async function inPool(items, worker, concurrency = CONCURRENCY) {
+export async function inPool(items, worker, concurrency = CONCURRENCY) {
   let i = 0;
   const run = async () => {
     while (i < items.length) {
@@ -81,7 +81,7 @@ async function inPool(items, worker, concurrency = CONCURRENCY) {
   await Promise.all(Array.from({ length: concurrency }, run));
 }
 
-function chunks(arr, n) {
+export function chunks(arr, n) {
   const out = [];
   for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
   return out;
@@ -100,7 +100,7 @@ function finalTitleMap(query, asked) {
   return map;
 }
 
-async function revisionIds(titles) {
+export async function revisionIds(titles) {
   const revs = new Map(); // asked title -> { final, rev }
   let done = 0;
   await inPool(chunks(titles, BATCH), async (batch) => {
@@ -119,14 +119,21 @@ async function revisionIds(titles) {
   return revs;
 }
 
-async function pageContents(titles, onPage) {
+// Downloads page text in batches of 50. Large batches come back in parts (a "continue" marker),
+// so keep asking until every page in the batch has been delivered.
+export async function pageContents(titles, onPage) {
   let done = 0;
   await inPool(chunks(titles, BATCH), async (batch) => {
-    const url = `${API}?action=query&format=json&formatversion=2&maxlag=5&prop=revisions&rvprop=ids%7Ccontent&rvslots=main&titles=${encodeURIComponent(batch.join('|'))}`;
-    const json = await getJson(url);
-    for (const p of (json.query && json.query.pages) || []) {
-      const r = p.revisions && p.revisions[0];
-      if (r) onPage(p.title, r.revid, r.slots && r.slots.main ? r.slots.main.content : r.content);
+    let cont = '';
+    for (let guard = 0; guard < 60; guard++) {
+      const url = `${API}?action=query&format=json&formatversion=2&maxlag=5&prop=revisions&rvprop=ids%7Ccontent&rvslots=main&titles=${encodeURIComponent(batch.join('|'))}${cont}`;
+      const json = await getJson(url);
+      for (const p of (json.query && json.query.pages) || []) {
+        const r = p.revisions && p.revisions[0];
+        if (r && (r.slots ? r.slots.main && r.slots.main.content != null : r.content != null)) onPage(p.title, r.revid, r.slots ? r.slots.main.content : r.content);
+      }
+      if (!json.continue) break;
+      cont = Object.entries(json.continue).map(([k, v]) => `&${k}=${encodeURIComponent(v)}`).join('');
     }
     done += batch.length;
     if (done % 2500 < BATCH) log(`downloaded ${done}/${titles.length} pages`);

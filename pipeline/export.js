@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { once } from 'node:events';
+import { fullInnings } from './history.js';
 
 const COLUMNS = {
   competitions: ['competition_id', 'name', 'group_name', 'format', 'gender'],
@@ -16,6 +17,9 @@ const COLUMNS = {
   batting: ['match_id', 'innings_no', 'team', 'position', 'player_id', 'player', 'runs', 'balls', 'fours', 'sixes', 'not_out', 'dismissal', 'dismissal_kind'],
   bowling: ['match_id', 'innings_no', 'team', 'player_id', 'player', 'balls', 'overs', 'maidens', 'runs', 'wickets', 'dots', 'wides', 'noballs'],
   players: ['player_id', 'name', 'full_name', 'country', 'cricinfo_id', 'wikipedia_title'],
+  history_matches: ['match_id', 'competition_id', 'start_date', 'team1', 'team2', 'venue', 'result', 'toss', 'umpires', 'player_of_match', 'cricinfo_id', 'wikipedia_article', 'has_full_scorecard'],
+  history_innings: ['match_id', 'innings_no', 'batting_team', 'runs', 'wickets', 'overs', 'declared'],
+  history_performances: ['match_id', 'innings_no', 'batting_team', 'kind', 'player', 'player_id', 'wikipedia_title', 'runs', 'balls', 'fours', 'sixes', 'not_out', 'dismissal', 'overs', 'maidens', 'runs_conceded', 'wickets', 'source'],
   careers: ['player_id', 'player', 'competition_id', 'source', 'wikipedia_as_of', 'matches', 'runs', 'batting_avg', 'hundreds', 'fifties', 'high_score', 'high_score_not_out', 'balls_bowled', 'wickets', 'bowling_avg', 'economy', 'five_wickets', 'ten_wickets', 'best_bowling', 'catches', 'stumpings'],
 };
 
@@ -135,6 +139,23 @@ export class Exporter {
       id, name, compId, { c: 'cricsheet', w: 'wikipedia', wc: 'wikipedia+cricsheet' }[c.src], c.asof || null,
       c.m, c.r, c.avg, c.c100, c.c50, c.hs, !!c.hsNo, c.balls, c.wk, c.bavg, c.econ, c.w5, c.w10, c.bbi, c.ct, c.st,
     ]);
+  }
+
+  // Historical match from Wikipedia (summary scorecard, or full scorecard where one exists).
+  historyMatch(id, compId, m, linkId) {
+    this.row('history_matches', [id, compId, m.date, m.teams[0], m.teams[1], m.venue, m.result, m.toss, m.umpires, m.pom, m.cricinfo, m.article, !!m.full]);
+    m.innings.forEach((i, k) => {
+      const n = k + 1;
+      this.row('history_innings', [id, n, i.team, i.r, i.w, i.overs, i.dec]);
+      const full = fullInnings(m, k);
+      if (full) {
+        for (const b of full.bat) this.row('history_performances', [id, n, i.team, 'batting', b.name, linkId(b.title), b.title, b.runs, b.balls, b.fours, b.sixes, b.no, b.how, null, null, null, null, 'full scorecard']);
+        for (const w of full.bowl) this.row('history_performances', [id, n, i.team, 'bowling', w.name, linkId(w.title), w.title, null, null, null, null, null, null, w.overs, w.maidens, w.runs, w.wkts, 'full scorecard']);
+      } else {
+        for (const b of i.bat) this.row('history_performances', [id, n, i.team, 'batting', b.name, linkId(b.title), b.title, b.runs, b.balls, null, null, b.no, null, null, null, null, null, 'top performer']);
+        for (const w of i.bowl) this.row('history_performances', [id, n, i.team, 'bowling', w.name, linkId(w.title), w.title, null, null, null, null, null, null, w.overs, null, w.r, w.w, 'top performer']);
+      }
+    });
   }
 
   async close() {

@@ -5,7 +5,7 @@ import { useData } from '../data.js';
 import { date, dec, num, overs } from '../format.js';
 import DataTable from '../components/DataTable.jsx';
 import CompPicker from '../components/CompPicker.jsx';
-import { PlayerLink, ResultRow } from '../components/Bits.jsx';
+import { PlayerLink, ResultList } from '../components/Bits.jsx';
 
 const TABS = [
   ['batting', 'Batting'],
@@ -145,6 +145,8 @@ function Records({ comp }) {
   if (!data) return <p className="loading">Loading records…</p>;
   const when = (r) => <Link to={`/match/${r.match}`} className="rec-when">{date(r.date)}</Link>;
   return (
+    <>
+    {data.allTime && <p className="section-note">All-time records. Matches before ball-by-ball records began come from Wikipedia's match summaries, which list every innings total and the top performers of each innings.</p>}
     <div className="records-grid">
       <RecordList
         title="Highest team totals" rows={data.highestTotals.slice(0, 10)}
@@ -156,7 +158,7 @@ function Records({ comp }) {
       />
       <RecordList
         title="Highest individual scores" rows={data.highestScores.slice(0, 10)}
-        render={(r) => (<><span className="rec-val">{r.runs}{r.no ? '*' : ''}</span><span className="rec-who"><PlayerLink id={r.id} name={r.name} /> <span className="muted">{r.balls}b, {r.team} v {r.opp}</span></span>{when(r)}</>)}
+        render={(r) => (<><span className="rec-val">{r.runs}{r.no ? '*' : ''}</span><span className="rec-who"><PlayerLink id={r.id} name={r.name} /> <span className="muted">{r.balls != null ? `${r.balls}b, ` : ''}{r.team} v {r.opp}</span></span>{when(r)}</>)}
       />
       <RecordList
         title="Best bowling figures" rows={data.bestFigures.slice(0, 10)}
@@ -165,8 +167,10 @@ function Records({ comp }) {
       <RecordList
         title="Most sixes in an innings" rows={data.mostSixesInnings.slice(0, 10)}
         render={(r) => (<><span className="rec-val">{r.sixes}</span><span className="rec-who"><PlayerLink id={r.id} name={r.name} /> <span className="muted">{r.runs}{r.no ? '*' : ''} ({r.balls}b) v {r.opp}</span></span>{when(r)}</>)}
+        note={data.allTime ? 'Ball-by-ball era only' : undefined}
       />
     </div>
+    </>
   );
 }
 
@@ -236,7 +240,7 @@ function CompResults({ comp }) {
   const { data, error } = useData(`comp/${comp.id}/results.json`);
   if (error) return <p className="notice">Results could not be loaded.</p>;
   if (!data) return <p className="loading">Loading results…</p>;
-  return <ul className="results-list">{data.map((m) => <ResultRow key={m.id} m={m} showComp={false} />)}</ul>;
+  return <ResultList matches={data} showComp={false} />;
 }
 
 const SRC_LABEL = { c: 'Ball-by-ball', w: 'Wikipedia', wc: 'Wikipedia + ball-by-ball' };
@@ -341,7 +345,9 @@ export default function Stats() {
         <div>
           <h1>{comp.name}</h1>
           <p className="muted">
-            {tab === 'alltime' ? 'Every international career, all-time' : `${num(comp.matches)} matches with ball-by-ball data, ${date(comp.from)} to ${date(comp.to)}`}
+            {tab === 'alltime' ? 'Every international career, all-time'
+              : comp.histMatches && ['records', 'teams', 'results'].includes(tab) ? `${num(comp.matches + comp.histMatches)} matches, ${date(comp.firstMatch)} to ${date(comp.to)}`
+                : `${num(comp.matches)} matches with ball-by-ball data, ${date(comp.from)} to ${date(comp.to)}`}
           </p>
         </div>
         <CompPicker value={comp.id} onChange={(id) => navigate(`/stats/${id}`)} label="Switch competition" />

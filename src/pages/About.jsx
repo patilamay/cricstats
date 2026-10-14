@@ -37,10 +37,20 @@ export default function About() {
         {meta.wiki && ` Career totals currently come from ${num(meta.wiki.players)} Wikipedia articles.`}
       </p>
 
+      <h2>Matches before ball-by-ball records</h2>
+      <p>
+        For international matches without ball-by-ball data, mostly before 2002, the site uses the match summaries on Wikipedia's
+        series and tournament articles. They give every innings total, the top scorers and bowlers of each innings, the result,
+        venue, umpires and toss, back to the first Test in 1877. A small number of famous matches have a full scorecard on
+        Wikipedia, and those are shown in full. These matches appear in results, team records and the all-time records lists.
+        {meta.history && ` Currently ${num(Object.values(meta.history).reduce((a, h) => a + h.added, 0))} such matches are included.`}
+      </p>
+
       <h2>What is and isn't covered</h2>
       <p>
-        Scorecards, records, season tables, and the batting, bowling and fielding tables count only matches with ball-by-ball data.
-        For Tests and ODIs that means roughly 2001 onward; leagues are covered from their first season.
+        Season tables, most-sixes records, and the batting, bowling and fielding tables count only matches with ball-by-ball data.
+        For Tests and ODIs that means roughly 2001 onward; leagues are covered from their first season. Full player-by-player
+        scorecards for older matches exist only in commercial archives.
       </p>
       <ul>
         {meta.competitions.map((c) => (

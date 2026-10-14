@@ -9,8 +9,16 @@ There is no server or database. Once a day a GitHub Action:
 1. downloads each competition's zip from Cricsheet,
 2. computes every stat from the ball-by-ball records (`pipeline/`),
 3. for international formats, adds complete careers: each player's totals from their Wikipedia infobox (as of the date it gives) plus every Cricsheet match since that date (`pipeline/wiki.js`, `pipeline/careers.js`),
-4. writes the results as static JSON into `public/data/`,
-5. builds the React site and publishes it to GitHub Pages.
+4. adds historical internationals without ball-by-ball data (mostly before 2002) from Wikipedia's per-match summary boxes: innings totals, top performers, result, venue, and full scorecards where Wikipedia has them (`pipeline/matchbox.js`, `pipeline/history.js`),
+5. writes the results as static JSON into `public/data/`, and the downloadable DuckDB/Parquet database,
+6. builds the React site and publishes it to GitHub Pages.
+
+## Download the database
+
+Every day the full dataset is published as the [`data` release](https://github.com/patilamay/cricstats/releases/tag/data):
+`cricstats.duckdb.gz` (DuckDB; gunzip first) and `cricstats-parquet.zip` (one Parquet file per table, for Power BI, Fabric,
+pandas or Spark). Tables: matches, innings, deliveries (ball by ball), batting, bowling, players, careers, and history_* for
+older matches. Build it yourself with `pip install duckdb` then `npm run db` (writes `db/`).
 
 If a download or test fails, the run stops and the previous version of the site stays live.
 
