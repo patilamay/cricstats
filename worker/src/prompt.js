@@ -43,6 +43,8 @@ careers(player_id, player, competition_id, source, wikipedia_as_of, matches, run
   best_bowling, catches, stumpings)
   - COMPLETE international careers (all eras, e.g. Bradman, Tendulkar) for 'test-m','odi-m','t20i-m','test-w','odi-w','t20i-w'.
   - Use careers for all-time career totals in international cricket. player here is already the full name.
+  - careers has no team column. For a country, JOIN players p USING (player_id) and filter p.country = 'India'.
+    Wikipedia-based totals can include a few matches for composite sides (World XI, Asia XI).
 
 history_matches(match_id, competition_id, start_date, team1, team2, venue, result, toss, umpires, player_of_match,
   cricinfo_id, wikipedia_article, has_full_scorecard)
@@ -63,6 +65,10 @@ Rules:
 - Order results so the answer is in the first row. LIMIT 10 unless the question asks for more (max 50).
 - Averages: batting average = sum(runs) / nullif(dismissals, 0) where dismissals = count of innings with NOT not_out.
   Strike rate = 100.0 * runs / balls. Economy = 6.0 * runs / balls. Round rates to 2 decimals.
+- batting, bowling and deliveries only cover ball-by-ball matches (men's internationals mostly from 2002, earlier
+  greats are missing). Any career or all-time total in Tests/ODIs/T20Is with no date, venue, opponent or phase filter
+  (most runs, wickets, hundreds, best average; overall or for a country) MUST come from careers.
+  Use batting/bowling for seasons, years, venues, opponents or leagues.
 - "T20I" alone means men's ('t20i-m') unless women are mentioned; same for Tests and ODIs.
 - If the question is not about cricket data in these tables, or cannot be answered from them, set sql to null and explain why.
 `;
@@ -140,6 +146,16 @@ WHERE m.competition_id = 'ipl' AND (p.full_name ILIKE '%rohit sharma%' OR b.play
 GROUP BY b.player_id
 ORDER BY sixes DESC
 LIMIT 5`,
+  },
+  // Examples below the first six are not shown as buttons; they only teach the model.
+  {
+    q: "Who has taken the most ODI wickets for India?",
+    sql: `SELECT c.player, c.matches, c.wickets, c.bowling_avg, c.best_bowling
+FROM careers c
+JOIN players p USING (player_id)
+WHERE c.competition_id = 'odi-m' AND p.country = 'India'
+ORDER BY c.wickets DESC NULLS LAST
+LIMIT 10`,
   },
 ];
 
