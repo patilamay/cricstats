@@ -161,3 +161,11 @@ test('dedupe merges copies of the same match from different articles', async () 
   assert.equal(out.length, 2);
   assert.equal(out.find((m) => m.innings.length === 2).cricinfo, '111');
 });
+
+test('extractFromArticle keeps Tests, drops tour games', async () => {
+  const { extractFromArticle } = await import('../history.js');
+  const out = extractFromArticle('English cricket team in Australia in 1876–77', FIRST_TEST);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].comp, 'test-m');
+  assert.equal(out[0].article, 'English cricket team in Australia in 1876–77');
+});

@@ -83,6 +83,8 @@ function sameScores(a, b) {
   return common >= Math.min(a.innings.length, b.innings.length, 2) || (!a.innings.length || !b.innings.length);
 }
 
+export const unknownTeamCodes = new Map(); // codes seen in boxes but not mapped to a team (for reports)
+
 export function extractFromArticle(title, text) {
   const out = [];
   for (const box of findMatchBoxes(text)) {
