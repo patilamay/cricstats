@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { findMatchBoxes, parseMatchBox, classify, parseScore, parseBatting, parseBowling, parseDate, cricinfoId, teamName } from '../matchbox.js';
+import { findMatchBoxes, parseMatchBox, classify, parseScore, parseBatting, parseBowling, parseDate, cricinfoId, teamName, findFullScorecards } from '../matchbox.js';
 
 // Verbatim from the Wikipedia article on the first-ever Test (fetched by the CI probe).
 const FIRST_TEST = `==Test series==
@@ -108,4 +108,44 @@ test('score, performer, date and team helpers', () => {
   assert.equal(cricinfoId('[https://www.espncricinfo.com/series/x-123/aus-vs-eng-1st-test-1234567/full-scorecard Scorecard]'), '1234567');
   assert.deepEqual(teamName('{{cr|IND-W}}'), { name: 'India', code: 'IND', women: true, national: true });
   assert.equal(teamName('[[Kent County Cricket Club|Kent]]').national, false);
+});
+
+test('dates without a year take it from the article season; more templates and team forms', () => {
+  assert.equal(parseDate('2–7 December<br />([[Timeless Test]])', 'English cricket team in Australia in 1932–33'), '1932-12-02');
+  assert.equal(parseDate('10–16 February', 'English cricket team in Australia in 1932–33'), '1933-02-10');
+  const lo = findMatchBoxes('==Final==\n{{Limited overs international\n |date = 25 June 1983\n |team1 = {{cr-rt|IND}}\n |score1 = 183 (54.4 overs)\n |team2 = {{cr|WIN}}\n |score2 = 140 (52 overs)\n |result = India won by 43 runs\n}}');
+  const m = parseMatchBox(lo[0], '1983 Cricket World Cup');
+  assert.deepEqual(m.innings.map((i) => `${i.team} ${i.r}`), ['India 183', 'West Indies 140']);
+  assert.equal(classify(m, '1983 Cricket World Cup'), 'odi-m');
+  assert.equal(teamName('{{cr|India}}').name, 'India');
+  assert.equal(teamName('{{cr|India}}').national, true);
+  assert.equal(teamName('{{cr|ENG|A}}').national, false);
+  assert.equal(teamName('{{cr|GUYANA}}').national, false);
+  assert.equal(teamName('{{cr|NGA}}').name, 'Nigeria');
+});
+
+test('full scorecards from batting/bowling box templates', () => {
+  const text = `==Scorecard==
+{{Cricket match batting box begin|title={{cr|IND}} batting<ref name="f">{{cite web |url=https://www.espncricinfo.com/series/prudential-world-cup-1983-60832/india-vs-west-indies-final-65090/full-scorecard}}</ref>}}
+{{Cricket match batsman status|player=[[Sunil Gavaskar]]|status=c †Dujon b Roberts|runs=2|balls=12|4s=0|6s=0|strike_rate=16.66}}
+{{Cricket match batsman status|player=[[Kapil Dev]] *|status=c Holding b Gomes|runs=15|balls=8|4s=3|6s=0}}
+{{Cricket match batsman status|player=[[Balwinder Sandhu]]|status=not out|runs=11|balls=30|4s=1|6s=0}}
+{{Cricket match batsman status|player=Extras|status=(b 5, lb 5, w 9, nb 1)|runs=20}}
+{{Cricket match batsman status|player='''Total'''|status=(all out; 54.4 overs)|runs='''183'''}}
+{{Cricket match box end}}
+{{Cricket match bowling box begin|title={{cr|WIN}} bowling}}
+{{Cricket match bowler status|bowler=[[Andy Roberts (cricketer)|Andy Roberts]]|overs=10|maiden=3|runs=32|wickets=3|econ=3.20|wides=0|no-balls=0}}
+{{Cricket match box end}}`;
+  const [card] = findFullScorecards(text);
+  assert.equal(card.cricinfo, '65090');
+  const inn = card.innings[0];
+  assert.equal(inn.team, 'India');
+  assert.equal(inn.total, 183);
+  assert.equal(inn.wkts, 10);
+  assert.equal(inn.overs, '54.4');
+  assert.equal(inn.extras, 20);
+  assert.deepEqual(inn.bat.map((b) => `${b.name} ${b.runs}${b.no ? '*' : ''} (${b.balls})`), ['Sunil Gavaskar 2 (12)', 'Kapil Dev 15 (8)', 'Balwinder Sandhu 11* (30)']);
+  assert.equal(inn.bat[1].captain, true);
+  assert.equal(inn.bat[0].how, 'c †Dujon b Roberts');
+  assert.deepEqual(inn.bowl[0], { name: 'Andy Roberts', title: 'Andy Roberts (cricketer)', overs: '10', maidens: 3, runs: 32, wkts: 3, wides: 0, noballs: 0 });
 });

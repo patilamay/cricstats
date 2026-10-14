@@ -10,7 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { API, getJson, revisionIds, pageContents } from './wiki.js';
-import { findMatchBoxes, parseMatchBox, classify } from './matchbox.js';
+import { findMatchBoxes, parseMatchBox, classify, findFullScorecards } from './matchbox.js';
 
 const TEMPLATES = [
   'Template:Two-innings cricket match',
@@ -18,8 +18,10 @@ const TEMPLATES = [
   'Template:Single-innings cricket match',
   'Template:Single-innings cricket match collapsible',
   'Template:Limited overs matches',
+  'Template:Limited overs international',
+  'Template:Cricket match batsman status', // full scorecards for notable matches
 ];
-const PARSER_VERSION = 2;
+const PARSER_VERSION = 4;
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), '[history]', ...a);
 
 async function articlesUsing(template) {
@@ -65,7 +67,7 @@ export function extractFromArticle(title, text) {
   const out = [];
   for (const box of findMatchBoxes(text)) {
     let m;
-    try { m = parseMatchBox(box); } catch { m = null; }
+    try { m = parseMatchBox(box, title); } catch { m = null; }
     if (!m || !m.date) continue;
     for (const code of [m.codes && m.codes[0], m.codes && m.codes[1]]) if (code && code.unknown) unknownTeamCodes.set(code.code, (unknownTeamCodes.get(code.code) || 0) + 1);
     delete m.codes;
@@ -98,7 +100,9 @@ export async function fetchHistory({ cacheDir }) {
   log(`${titles.length} articles, ${stale.length} new or changed since last run`);
 
   await pageContents(stale, (title, rev, text) => {
-    cache[title] = { rev, m: extractFromArticle(title, text) };
+    let full = [];
+    try { full = findFullScorecards(text).filter((c) => c.cricinfo); } catch { full = []; }
+    cache[title] = { rev, m: extractFromArticle(title, text), f: full.length ? full : undefined };
   });
 
   const live = new Set([...revs.values()].map((r) => r.final));
@@ -107,6 +111,15 @@ export async function fetchHistory({ cacheDir }) {
   fs.writeFileSync(cacheFile, JSON.stringify({ v: PARSER_VERSION, pages }));
 
   const all = dedupe(Object.values(pages).flatMap((p) => p.m || []));
+  // Attach full scorecards (from articles about individual matches) by ESPNcricinfo id.
+  const fullById = new Map();
+  for (const p of Object.values(pages)) for (const c of p.f || []) if (!fullById.has(c.cricinfo) || c.innings.length > fullById.get(c.cricinfo).innings.length) fullById.set(c.cricinfo, c);
+  let attached = 0;
+  for (const m of all) {
+    const c = m.cricinfo && fullById.get(m.cricinfo);
+    if (c) { m.full = c.innings; attached += 1; }
+  }
+  log(`${fullById.size} full scorecards found, ${attached} attached to matches`);
   const byComp = new Map();
   for (const m of all) {
     if (!byComp.has(m.comp)) byComp.set(m.comp, []);
