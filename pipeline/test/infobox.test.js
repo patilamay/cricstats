@@ -116,3 +116,14 @@ test('helpers', () => {
   assert.equal(asOfDate('', '1948'), '1948-12-31');
   assert.equal(asOfDate('', ''), null);
 });
+
+test('implausible columns are rejected, names with links inside templates clean up', () => {
+  const p = parseInfobox(`{{Infobox cricketer
+| name = Babar Azam {{post-nominals|country=PAK|[[Sitara-e-Imtiaz|SI]]}}
+| column1 = ODI | matches1 = 77 | runs1 = 1,604 | bat avg1 = 27.66 | wickets1 = 971 | bowl avg1 = 84.66 | deliveries1 = 2,000
+| column2 = T20I | matches2 = 40 | runs2 = 900 | bat avg2 = 30.00 | top score2 = 80
+}}`);
+  assert.equal(p.name, 'Babar Azam SI');
+  assert.deepEqual(Object.keys(p.formats), ['T20I-m']);
+  assert.match(p.rejected[0], /ODI: too many wickets per match/);
+});

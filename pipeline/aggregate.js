@@ -5,7 +5,7 @@ const round = (x, dp = 2) => (x == null || !isFinite(x) ? null : Math.round(x * 
 
 function newPlayer(id, name) {
   return {
-    id, name, teams: new Set(), m: 0,
+    id, name, teams: new Map(), m: 0,
     bat: { inn: 0, no: 0, runs: 0, bf: 0, hs: -1, hsNo: false, c50: 0, c100: 0, ducks: 0, f4: 0, s6: 0 },
     bowl: { inn: 0, balls: 0, runs: 0, wkts: 0, maid: 0, dots: 0, bbiW: -1, bbiR: 0, bbmW: -1, bbmR: 0, w4: 0, w5: 0, w10m: 0 },
     fld: { ct: 0, st: 0, ro: 0 },
@@ -65,7 +65,7 @@ export class CompetitionAggregator {
     for (const pl of m.players) {
       const p = this.player(pl.id, pl.name);
       p.m += 1;
-      p.teams.add(pl.team);
+      p.teams.set(pl.team, (p.teams.get(pl.team) || 0) + 1);
     }
 
     this.addTeamResult(m);
@@ -196,7 +196,7 @@ export class CompetitionAggregator {
       const b = p.bat;
       const w = p.bowl;
       const outs = b.inn - b.no;
-      const row = { id: p.id, n: p.name, t: [...p.teams], m: p.m };
+      const row = { id: p.id, n: p.name, t: [...p.teams.entries()].sort((a, b) => b[1] - a[1]).map((e) => e[0]), m: p.m };
       if (b.inn > 0) {
         row.b = {
           inn: b.inn, no: b.no, r: b.runs, bf: b.bf, hs: b.hs, hsNo: b.hsNo,
@@ -211,11 +211,11 @@ export class CompetitionAggregator {
           avg: w.wkts ? round(w.runs / w.wkts) : null,
           econ: round((w.runs * 6) / w.balls),
           sr: w.wkts ? round(w.balls / w.wkts, 1) : null,
-          bbi: w.bbiW >= 0 ? `${w.bbiW}/${w.bbiR}` : null,
+          bbi: w.bbiW > 0 ? `${w.bbiW}/${w.bbiR}` : null,
           w4: w.w4, w5: w.w5,
         };
         if (isTest) {
-          row.w.bbm = w.bbmW >= 0 ? `${w.bbmW}/${w.bbmR}` : null;
+          row.w.bbm = w.bbmW > 0 ? `${w.bbmW}/${w.bbmR}` : null;
           row.w.w10 = w.w10m;
         }
       }

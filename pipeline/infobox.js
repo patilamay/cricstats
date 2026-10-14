@@ -66,6 +66,8 @@ export function clean(v) {
   s = s.replace(/\{\{\s*(not out|no|asterisk|\*)\s*\}\}/gi, '*');
   s = s.replace(/\{\{\s*(ndash|en dash|snd|spaced ndash)\s*\}\}/gi, '–');
   s = s.replace(/\{\{\s*(nbsp|thinsp|sp)\s*\}\}/gi, ' ');
+  // Links first, so pipes inside [[target|label]] don't confuse template argument splitting.
+  s = s.replace(/\[\[([^\]|]*)\|([^\]]*)\]\]/g, '$2').replace(/\[\[([^\]]*)\]\]/g, '$1');
   // Repeatedly unwrap remaining templates to their last positional argument ({{nowrap|51/68}} → 51/68).
   for (let k = 0; k < 5 && /\{\{/.test(s); k++) {
     s = s.replace(/\{\{([^{}]*)\}\}/g, (_, body) => {
@@ -73,7 +75,6 @@ export function clean(v) {
       return args.length > 1 ? args[args.length - 1] : '';
     });
   }
-  s = s.replace(/\[\[([^\]|]*)\|([^\]]*)\]\]/g, '$2').replace(/\[\[([^\]]*)\]\]/g, '$1');
   s = s.replace(/\[https?:\/\/\S+\s+([^\]]*)\]/g, '$1').replace(/\[https?:\/\/[^\]]*\]/g, '');
   s = s.replace(/'''?/g, '');
   for (const [e, r] of Object.entries(ENTITIES)) s = s.split(e).join(r);
@@ -155,6 +156,7 @@ export function parseInfobox(wikitext) {
   if (!inner) return null;
   const p = splitParams(inner);
   const formats = {};
+  const rejected = [];
   for (let i = 1; i <= 6; i++) {
     const col = columnFormat(p[`column${i}`]);
     if (!col) continue;
@@ -165,7 +167,7 @@ export function parseInfobox(wikitext) {
     const [ct, st] = pair(g('catches/stumpings'));
     const ts = topScore(g('top score'));
     const bb = bestBowling(g('best bowling'));
-    formats[`${col.format}-${col.women ? 'w' : 'm'}`] = {
+    const rec = {
       m,
       r: toInt(g('runs')) ?? 0,
       avg: toFloat(g('bat avg')),
@@ -182,12 +184,33 @@ export function parseInfobox(wikitext) {
       ct: ct ?? 0,
       st: st ?? 0,
     };
+    const problem = implausible(col.format, rec);
+    if (problem) { rejected.push(`${col.format}${col.women ? ' (women)' : ''}: ${problem}`); continue; }
+    formats[`${col.format}-${col.women ? 'w' : 'm'}`] = rec;
   }
-  if (!Object.keys(formats).length) return null;
+  if (!Object.keys(formats).length) return rejected.length ? { rejected } : null;
   return {
+    rejected: rejected.length ? rejected : undefined,
     name: clean(p.name) || null,
     country: clean(p.country) || null,
     asof: asOfDate(p.date, p.year),
     formats,
   };
+}
+
+// Sanity checks that catch garbled infoboxes (wrong cell, stray digits). Returns a reason or null.
+export function implausible(format, r) {
+  const maxInn = format === 'Test' ? 2 * r.m : r.m;
+  if (r.c100 + r.c50 > maxInn) return 'more 50s/100s than innings';
+  if (r.hs != null && r.hs > r.r) return 'top score above career runs';
+  if (r.avg != null && r.avg > 0 && r.r / r.avg > maxInn + 0.5) return 'average implies more dismissals than innings';
+  if (r.r > maxInn * (format === 'Test' ? 400 : 250)) return 'runs per innings impossible';
+  if (r.wk > r.m * (format === 'Test' ? 20 : 10)) return 'too many wickets per match';
+  if (r.balls > 0 && r.wk * 1 > r.balls) return 'more wickets than balls';
+  if (r.wk > 0 && r.bavg != null && r.balls > 0) {
+    const econ = (r.bavg * r.wk * 6) / r.balls;
+    if (econ > 30 || econ < 0.3) return 'economy rate impossible';
+  }
+  if (r.w5 > maxInn || r.w10 > r.m) return 'too many five-wicket hauls';
+  return null;
 }

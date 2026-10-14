@@ -72,7 +72,7 @@ function addLines(base, lines) {
     t.wk += l.wk;
     t.w5 += l.w5;
     if (l.wk >= 10) t.w10 += 1;
-    if (l.bbiW >= 0 && l.bb > 0) t.bbi = betterBbi(t.bbi, { w: l.bbiW, r: l.bbiR });
+    if (l.bbiW > 0) t.bbi = betterBbi(t.bbi, { w: l.bbiW, r: l.bbiR });
     t.ct += l.ct;
     t.st += l.st;
   }

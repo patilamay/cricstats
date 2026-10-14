@@ -17,13 +17,15 @@ notice('Summary', [
   `latest match ${meta.latestMatch}, ${meta.totals.matches} matches, ${meta.totals.players} players, ${meta.totals.scorecards} scorecards`,
   meta.wiki ? `Wikipedia: ${meta.wiki.players} articles parsed, ${meta.wiki.matched} linked to Cricsheet players, ${meta.wiki.wikiOnly} pre-Cricsheet players` : 'Wikipedia: none',
   meta.wiki ? `per format: ${JSON.stringify(meta.wiki.byComp)}` : '',
+  meta.wiki ? `${meta.wiki.rejectedCount} infobox columns rejected by sanity checks; sample:` : '',
+  ...((meta.wiki && meta.wiki.rejectedSample) || []).map((r) => `  ${r}`),
 ]);
 
 const WATCH = {
   'test-m': ['Tendulkar', 'Bradman', 'Anderson', 'Muralitharan', 'Kohli', 'Joe Root', 'Kallis', 'Gavaskar'],
-  'odi-m': ['Tendulkar', 'Kohli', 'Muralitharan', 'Viv Richards'],
-  't20i-m': ['Kohli', 'Rohit Sharma', 'Babar Azam'],
-  'test-w': ['Mithali', 'Ellyse Perry'],
+  'odi-m': ['Tendulkar', 'Kohli', 'Muralitharan', 'Viv Richards', 'Aarif Sheikh'],
+  't20i-m': ['Kohli', 'Rohit Sharma', 'Babar Azam', 'Rashid Khan'],
+  'test-w': ['Mithali', 'Ellyse Perry', 'Heyhoe Flint'],
   'odi-w': ['Mithali', 'Jhulan', 'Charlotte Edwards'],
   't20i-w': ['Suzie Bates', 'Mandhana'],
 };

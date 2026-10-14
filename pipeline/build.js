@@ -99,9 +99,10 @@ function shardOf(id) {
 }
 
 // Display name from Wikipedia: infobox name, else the article title without "(cricketer)" etc.
+// Display name: the Wikipedia article title without a disambiguator like "(cricketer)".
+// (Infobox names often carry honours and titles: "Sir ...", "... SI", "The Baroness ...".)
 function wikiName(w) {
-  const n = w.name && !/[[{|<]/.test(w.name) && w.name.length < 60 ? w.name : null;
-  return n || w.title.replace(/\s*\([^)]*\)\s*$/, '');
+  return w.title.replace(/\s*\([^)]*\)\s*$/, '');
 }
 
 async function loadWikiSources() {
@@ -174,7 +175,8 @@ async function addWikipediaCareers({ compData, people, leaders, compMeta, tmpOut
   }
   for (const id of byPlayer.keys()) { if (people.has(id)) { if (id.startsWith('w')) stats.wikiOnly += 1; else stats.matched += 1; } }
   log(`all-time tables: ${JSON.stringify(stats)}`);
-  return { players: wiki.size, matched: stats.matched, wikiOnly: stats.wikiOnly, byComp: stats.byComp, fetchedAt: new Date().toISOString() };
+  const rejected = wiki.rejected || [];
+  return { players: wiki.size, matched: stats.matched, wikiOnly: stats.wikiOnly, byComp: stats.byComp, rejectedCount: rejected.length, rejectedSample: rejected.slice(0, 25), fetchedAt: new Date().toISOString() };
 }
 
 async function main() {

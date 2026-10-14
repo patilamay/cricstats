@@ -17,7 +17,7 @@ const SPARQL = 'https://query.wikidata.org/sparql';
 const API = 'https://en.wikipedia.org/w/api.php';
 const BATCH = 50;
 const CONCURRENCY = 3;
-const PARSER_VERSION = 3; // bump to force re-parsing of cached pages after parser changes
+const PARSER_VERSION = 4; // bump to force re-parsing of cached pages after parser changes
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), '[wiki]', ...a);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -158,9 +158,12 @@ export async function fetchWikiCareers({ cacheDir }) {
   });
 
   const result = new Map();
+  const rejected = [];
   for (const [asked, { final }] of revs) {
     const entry = cache[final];
     if (!entry || !entry.d) continue;
+    if (entry.d.rejected) rejected.push(`${final} — ${entry.d.rejected.join('; ')}`);
+    if (!entry.d.formats) continue;
     for (const cid of byTitle.get(asked)) {
       if (!result.has(cid)) result.set(cid, { title: final, ...entry.d });
     }
@@ -171,7 +174,8 @@ export async function fetchWikiCareers({ cacheDir }) {
   const live = new Set([...revs.values()].map((r) => r.final));
   const pruned = Object.fromEntries(Object.entries(cache).filter(([t]) => live.has(t)));
   fs.writeFileSync(cacheFile, JSON.stringify({ v: PARSER_VERSION, pages: pruned }));
-  log(`${result.size} players with international career stats in ${Math.round((Date.now() - started) / 1000)}s`);
+  log(`${result.size} players with international career stats in ${Math.round((Date.now() - started) / 1000)}s; ${rejected.length} infobox columns failed sanity checks`);
+  result.rejected = [...new Set(rejected)];
   return result;
 }
 
