@@ -42,8 +42,9 @@ for (const [comp, names] of Object.entries(WATCH)) {
   for (const r of [...t].sort((a, b) => b.wk - a.wk).slice(0, 5)) lines.push(`  ${fmt(r)}`);
   lines.push('Watched:');
   for (const n of names) {
-    const hits = t.filter((r) => r.n.toLowerCase().includes(n.toLowerCase())).sort((a, b) => b.m - a.m).slice(0, 1);
-    lines.push(`  ${n}: ${hits.length ? fmt(hits[0]) : 'NOT FOUND'}`);
+    const hits = t.filter((r) => r.n.toLowerCase().includes(n.toLowerCase())).sort((a, b) => b.m - a.m);
+    lines.push(`  ${n}: ${hits.length ? fmt(hits[0]) : 'NOT FOUND'}${hits.length ? ` id=${hits[0].id} teams=${hits[0].t.join('/')}` : ''}`);
+    for (const h of hits.slice(1, 3)) lines.push(`      also: ${fmt(h)} id=${h.id} teams=${h.t.join('/')}`);
   }
   notice(`All-time ${comp}`, lines);
 }

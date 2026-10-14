@@ -126,4 +126,7 @@ test('implausible columns are rejected, names with links inside templates clean 
   assert.equal(p.name, 'Babar Azam SI');
   assert.deepEqual(Object.keys(p.formats), ['T20I-m']);
   assert.match(p.rejected[0], /ODI: too many wickets per match/);
+  const old = parseInfobox('{{Infobox cricketer | column1 = Test | matches1 = 10 | runs1 = 300 | bat avg1 = 20 | deliveries1 = 60 | wickets1 = 30 | bowl avg1 = 15 }}');
+  assert.equal(old.formats['Test-m'].wk, 30);
+  assert.equal(old.formats['Test-m'].balls, 0);
 });

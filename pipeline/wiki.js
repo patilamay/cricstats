@@ -17,7 +17,7 @@ const SPARQL = 'https://query.wikidata.org/sparql';
 const API = 'https://en.wikipedia.org/w/api.php';
 const BATCH = 50;
 const CONCURRENCY = 3;
-const PARSER_VERSION = 4; // bump to force re-parsing of cached pages after parser changes
+const PARSER_VERSION = 5; // bump to force re-parsing of cached pages after parser changes
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), '[wiki]', ...a);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

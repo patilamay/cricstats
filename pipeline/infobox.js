@@ -184,6 +184,12 @@ export function parseInfobox(wikitext) {
       ct: ct ?? 0,
       st: st ?? 0,
     };
+    // Early Tests used 4-, 5- and 8-ball overs, so balls bowled can look odd next to the average.
+    // If balls and bowling average don't fit together, keep everything except balls (economy becomes blank).
+    if (rec.wk > 0 && rec.bavg != null && rec.balls > 0) {
+      const econ = (rec.bavg * rec.wk * 6) / rec.balls;
+      if (econ > 30 || econ < 0.3) rec.balls = 0;
+    }
     const problem = implausible(col.format, rec);
     if (problem) { rejected.push(`${col.format}${col.women ? ' (women)' : ''}: ${problem}`); continue; }
     formats[`${col.format}-${col.women ? 'w' : 'm'}`] = rec;
@@ -207,10 +213,6 @@ export function implausible(format, r) {
   if (r.r > maxInn * (format === 'Test' ? 400 : 250)) return 'runs per innings impossible';
   if (r.wk > r.m * (format === 'Test' ? 20 : 10)) return 'too many wickets per match';
   if (r.balls > 0 && r.wk * 1 > r.balls) return 'more wickets than balls';
-  if (r.wk > 0 && r.bavg != null && r.balls > 0) {
-    const econ = (r.bavg * r.wk * 6) / r.balls;
-    if (econ > 30 || econ < 0.3) return 'economy rate impossible';
-  }
   if (r.w5 > maxInn || r.w10 > r.m) return 'too many five-wicket hauls';
   return null;
 }
