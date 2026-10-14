@@ -17,7 +17,7 @@ export default function Player() {
   const compById = Object.fromEntries(meta.competitions.map((c) => [c.id, c]));
   const career = p.career || {};
   const careerComps = meta.competitions.filter((c) => career[c.id]);
-  const teams = [...new Set([...comps.flatMap((c) => p.comps[c.id].t || []), ...(p.country && !comps.length ? [p.country] : [])])];
+  const teams = [...new Set([...(p.country ? [p.country] : []), ...comps.flatMap((c) => p.comps[c.id].t || [])])];
   const batting = comps.filter((c) => p.comps[c.id].b);
   const bowling = comps.filter((c) => p.comps[c.id].w);
   const fielding = comps.filter((c) => p.comps[c.id].f);

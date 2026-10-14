@@ -50,7 +50,7 @@ for (const [comp, names] of Object.entries(WATCH)) {
 }
 
 // Debug: full record for specific players, to investigate odd team labels.
-for (const id of (process.env.REPORT_PLAYERS || '5f547c8b').split(',')) {
+for (const id of (process.env.REPORT_PLAYERS || '').split(',').filter(Boolean)) {
   const shard = /^w\d+$/.test(id) ? `w${Number(id.slice(1)) % 32}` : id.slice(0, 2);
   const f = path.join(DATA, 'players', `${shard}.json`);
   if (!fs.existsSync(f)) continue;

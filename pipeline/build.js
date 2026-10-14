@@ -150,12 +150,15 @@ async function addWikipediaCareers({ compData, people, leaders, compMeta, tmpOut
       if (!career) continue;
       src[career.src] += 1;
       const name = w ? wikiName(w) : csRow.n;
-      const teams = csRow ? csRow.t : (w && w.country ? [w.country] : []);
+      // When Wikipedia supplies most of a career (e.g. matches Cricsheet withholds), lead with the player's country.
+      const country = w && w.country && w.country.length < 40 ? w.country : null;
+      const csTeams = csRow ? csRow.t : [];
+      const teams = country && (career.src !== 'c' || !csTeams.length) ? [country, ...csTeams.filter((t) => t !== country)] : csTeams;
       table.push({ id, n: name, t: teams, ...career });
 
       let p = people.get(id);
       if (!p) { p = { n: name, comps: {}, recent: [] }; people.set(id, p); }
-      if (w) { p.fn = wikiName(w); p.wiki = w.title; if (!csRow && w.country) p.country = w.country; }
+      if (w) { p.fn = wikiName(w); p.wiki = w.title; if (country) p.country = country; }
       p.career = p.career || {};
       p.career[compId] = career;
     }
@@ -313,9 +316,11 @@ async function main() {
     const teams = new Map();
     let matches = 0;
     for (const [cid, c] of Object.entries(p.comps)) {
-      const m = p.career && p.career[cid] ? p.career[cid].m : c.m;
+      const car = p.career && p.career[cid];
+      const m = car ? car.m : c.m;
       matches += m;
-      for (const t of c.t || []) teams.set(t, (teams.get(t) || 0) + m);
+      if (car && car.src !== 'c' && p.country) teams.set(p.country, (teams.get(p.country) || 0) + m);
+      else for (const t of c.t || []) teams.set(t, (teams.get(t) || 0) + m);
     }
     for (const [cid, c] of Object.entries(p.career || {})) {
       if (p.comps[cid]) continue;

@@ -28,6 +28,10 @@ export default function About() {
         These combined figures appear in the All-time tables, the home page leaders and the International career table on player pages.
       </p>
       <p>
+        This also covers matches Cricsheet doesn't publish. Cricsheet withholds a few hundred matches, including many of Afghanistan's
+        internationals, so for those players the Wikipedia totals carry most of the career.
+      </p>
+      <p>
         Wikipedia figures are maintained by volunteers and can occasionally be out of date or wrong. Wikipedia content is available under{' '}
         <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
         {meta.wiki && ` Career totals currently come from ${num(meta.wiki.players)} Wikipedia articles.`}
