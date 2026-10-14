@@ -20,6 +20,10 @@ export default function Player() {
   const batting = comps.filter((c) => p.comps[c.id].b);
   const bowling = comps.filter((c) => p.comps[c.id].w);
   const fielding = comps.filter((c) => p.comps[c.id].f);
+  const sum = (f) => comps.reduce((a, c) => a + (f(p.comps[c.id]) || 0), 0);
+  const totalRuns = sum((s) => s.b && s.b.r);
+  const totalWkts = sum((s) => s.w && s.w.wk);
+  const totalCt = sum((s) => s.f && s.f.ct);
 
   return (
     <div className="page player-page">
@@ -27,6 +31,12 @@ export default function Player() {
         <h1>{p.n}</h1>
         <p className="player-teams">{teams.join(', ')}</p>
         <p className="muted">{num(matches)} matches in {comps.length} {comps.length === 1 ? 'competition' : 'competitions'} covered by this site</p>
+        <ul className="player-chips">
+          <li><span className="chip-val">{num(matches)}</span><span className="chip-label">Matches</span></li>
+          {totalRuns > 0 && <li><span className="chip-val">{num(totalRuns)}</span><span className="chip-label">Runs</span></li>}
+          {totalWkts > 0 && <li><span className="chip-val">{num(totalWkts)}</span><span className="chip-label">Wickets</span></li>}
+          {totalCt > 0 && <li><span className="chip-val">{num(totalCt)}</span><span className="chip-label">Catches</span></li>}
+        </ul>
       </header>
 
       {batting.length > 0 && (

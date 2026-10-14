@@ -20,19 +20,19 @@ function defaultComp(meta) {
 
 function BoardColumn({ board }) {
   if (!board) return null;
+  const max = Math.max(...board.rows.map((r) => r.v), 1);
   return (
     <section className="board-col" aria-labelledby={`board-${board.key}`}>
       <h3 id={`board-${board.key}`}>{board.title}</h3>
       <ol className="board-rows">
         {board.rows.map((r, i) => (
-          <li key={r.id + i} className="board-row">
+          <li key={r.id + i} className={`board-row${i === 0 ? ' top' : ''}`} style={{ '--share': `${Math.round((r.v / max) * 100)}%` }}>
+            <span className="board-rank" aria-hidden="true">{i + 1}</span>
             <span className="board-name">
               <PlayerLink id={r.id} name={r.n} />
               <span className="board-team">{r.t.join(', ')}</span>
             </span>
-            <span className="plates" aria-label={`${r.v} ${board.unit}`}>
-              {String(r.v).split('').map((ch, j) => <span key={j} className={ch === '*' || ch === '/' ? 'plate mark' : 'plate'}>{ch}</span>)}
-            </span>
+            <span className="board-val">{num(r.v)}<span className="visually-hidden"> {board.unit}</span></span>
           </li>
         ))}
       </ol>
