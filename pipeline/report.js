@@ -48,3 +48,15 @@ for (const [comp, names] of Object.entries(WATCH)) {
   }
   notice(`All-time ${comp}`, lines);
 }
+
+// Debug: full record for specific players, to investigate odd team labels.
+for (const id of (process.env.REPORT_PLAYERS || '5f547c8b').split(',')) {
+  const shard = /^w\d+$/.test(id) ? `w${Number(id.slice(1)) % 32}` : id.slice(0, 2);
+  const f = path.join(DATA, 'players', `${shard}.json`);
+  if (!fs.existsSync(f)) continue;
+  const p = JSON.parse(fs.readFileSync(f, 'utf8'))[id];
+  if (!p) continue;
+  const comps = Object.entries(p.comps).map(([c, v]) => `${c}: m=${v.m} teams=${(v.t || []).join('/')}`);
+  const career = Object.entries(p.career || {}).map(([c, v]) => `${c}: m=${v.m} src=${v.src}`);
+  notice(`Player ${id}`, [`${p.n} / ${p.fn || ''} country=${p.country || ''} wiki=${p.wiki || ''}`, ...comps, ...career]);
+}
