@@ -11,7 +11,11 @@ There is no server or database. Once a day a GitHub Action:
 3. for international formats, adds complete careers: each player's totals from their Wikipedia infobox (as of the date it gives) plus every Cricsheet match since that date (`pipeline/wiki.js`, `pipeline/careers.js`),
 4. adds historical internationals without ball-by-ball data (mostly before 2002) from Wikipedia's per-match summary boxes: innings totals, top performers, result, venue, and full scorecards where Wikipedia has them (`pipeline/matchbox.js`, `pipeline/history.js`),
 5. writes the results as static JSON into `public/data/`, and the downloadable DuckDB/Parquet database,
-6. builds the React site and publishes it to GitHub Pages.
+6. builds the React site and publishes it to GitHub Pages, with the Parquet tables under `/db/`.
+
+## Ask (questions in plain English)
+
+The Ask page (`/ask`, also reached from the search box) answers questions like "Who scored the most T20I runs in 2024?". A small Cloudflare Worker (`worker/`) has Claude turn the question into SQL, and the query runs in the visitor's browser with DuckDB-WASM over the site's Parquet files. Setup and limits are in [worker/README.md](worker/README.md).
 
 ## Download the database
 

@@ -18,13 +18,14 @@ export default function Header() {
           {open ? 'Close' : 'Menu'}
         </button>
         <nav id="site-nav" className={open ? 'open' : ''} aria-label="Main">
+          <NavLink to="/ask" onClick={close}>Ask</NavLink>
           <NavLink to="/results" onClick={close}>Results</NavLink>
           <NavLink to="/stats/test-m" onClick={close} className={() => (pathname.startsWith('/stats/') ? 'active' : '')}>Stats</NavLink>
           <NavLink to="/players" onClick={close}>Players</NavLink>
           <NavLink to="/glossary" onClick={close}>Glossary</NavLink>
           <NavLink to="/about" onClick={close}>About</NavLink>
         </nav>
-        {pathname !== '/' && <PlayerSearch onPick={close} />}
+        {pathname !== '/' && pathname !== '/ask' && <PlayerSearch onPick={close} placeholder="Search or ask" />}
       </div>
     </header>
   );

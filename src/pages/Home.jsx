@@ -59,7 +59,7 @@ export default function Home() {
           <p className="hero-sub">
             Careers, records and scorecards for {num(meta.totals.players)} players across international cricket and the big leagues. Updated every day.
           </p>
-          <div className="hero-search"><PlayerSearch placeholder="Search for a player, like Kohli or Mandhana" /></div>
+          <div className="hero-search"><PlayerSearch placeholder="Search a player, or ask: most T20I runs in 2024?" /></div>
           <nav className="hero-links" aria-label="Browse by format">
             <Link to="/stats/test-m">Tests</Link>
             <Link to="/stats/odi-m">ODIs</Link>

@@ -10,13 +10,14 @@
     "preview": "vite preview",
     "data": "node pipeline/build.js",
     "data:sample": "node pipeline/sample/make-sample.js .cache/sample && node pipeline/build.js --local .cache/sample --wiki-local .cache/sample/_wiki --history-local .cache/sample/_wiki/history.json",
-    "test": "node --test pipeline/test/parse.test.js pipeline/test/infobox.test.js pipeline/test/careers.test.js pipeline/test/matchbox.test.js",
+    "test": "node --test pipeline/test/parse.test.js pipeline/test/infobox.test.js pipeline/test/careers.test.js pipeline/test/matchbox.test.js worker/test/worker.test.js",
     "db": "node pipeline/build.js --export .cache/export && python3 pipeline/make_db.py .cache/export db"
   },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
+    "@duckdb/duckdb-wasm": "^1.32.0",
     "@fontsource/figtree": "^5.3.0",
     "@fontsource/poppins": "^5.3.0",
     "react": "^18.3.1",

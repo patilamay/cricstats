@@ -5,3 +5,6 @@ public/data
 .env
 .env.*
 db/
+public/db
+.dev.vars
+.wrangler
