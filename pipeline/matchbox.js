@@ -109,9 +109,14 @@ export function parseScore(v) {
   const m = /(\d+)(?:\s*\/\s*(\d+))?\s*(d\b|dec\.?|declared)?/i.exec(s);
   if (!m) return null;
   const ov = /(\d+(?:\.\d)?)\s*overs?/i.exec(s);
+  let r = Number(m[1]);
+  let w = m[2] != null ? Number(m[2]) : 10;
+  // Australian convention writes wickets/runs ("0/19" = 19 for no wicket).
+  if (m[2] != null && w > 10 && r <= 10) [r, w] = [w, r];
+  if (w > 10) return null;
   return {
-    r: Number(m[1]),
-    w: m[2] != null ? Number(m[2]) : 10,
+    r,
+    w,
     dec: !!m[3] || /\bdec/i.test(s),
     overs: ov ? ov[1] : null,
     fo: /f\/o|follow/i.test(s),
