@@ -1,3 +1,4 @@
 // URL of the Cloudflare Worker that turns questions into SQL (see worker/README.md).
-// Set at build time with the VITE_ASK_URL environment variable (a GitHub Actions repository variable).
-export const ASK_URL = import.meta.env.VITE_ASK_URL || '';
+// Not a secret: the browser calls it directly. The VITE_ASK_URL build variable overrides it;
+// set it to an empty value (or clear this default) to switch typed questions off.
+export const ASK_URL = import.meta.env.VITE_ASK_URL ?? 'https://cricstats-ask.patilamay.workers.dev';

@@ -27,10 +27,7 @@ You need Node.js 20 or newer, an Anthropic API key and a free Cloudflare account
 
    The last command prints the worker's address, something like `https://cricstats-ask.<your-name>.workers.dev`. The first deploy may ask you to pick a `workers.dev` subdomain.
 3. **Cap your spending.** In the Anthropic Console, under Settings → Limits, set a monthly spend limit. Each question makes two small calls to Claude Haiku, which typically costs a fraction of a cent.
-4. **Point the site at the worker.** In GitHub, go to the repository, then Settings → Secrets and variables → Actions → **Variables** → New repository variable:
-   - Name: `ASK_URL`
-   - Value: the worker address from step 2, with no trailing slash
-5. **Redeploy the site**: Actions → "Refresh data and deploy" → Run workflow. (It also runs every day on its own.) After that, the search box and the Ask page accept any question.
+4. **Point the site at the worker.** Put the worker address from step 2 (no trailing slash) in `src/config.js` and push. The site redeploys on its own. (Live: `https://cricstats-ask.patilamay.workers.dev`.)
 
 ## Limits and safety
 
@@ -38,7 +35,7 @@ You need Node.js 20 or newer, an Anthropic API key and a free Cloudflare account
 - **Rate limit.** Each visitor (by IP) gets at most 16 requests a minute, which is about 8 questions. Change `limit` in `wrangler.toml`.
 - **Question length.** Questions are capped at 300 characters.
 - **Queries are read-only.** The returned SQL must be a single `SELECT`/`WITH`; anything else is rejected (`src/safe.js`). It runs in the visitor's browser against public data in any case.
-- **Turning it off.** Delete the `ASK_URL` variable and redeploy, or run `npx wrangler delete` in this folder.
+- **Turning it off.** Run `npx wrangler delete` in this folder (the Ask page then shows an error for typed questions; examples keep working), or set the address in `src/config.js` to `''` and push.
 
 ## Changing things
 
