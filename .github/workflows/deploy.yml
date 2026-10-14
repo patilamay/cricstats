@@ -79,7 +79,6 @@ jobs:
         run: npm run build
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}/
-          VITE_ASK_URL: ${{ vars.ASK_URL }}
 
       # The Ask page queries these Parquet files in the browser (DuckDB-WASM, HTTP range requests).
       - name: Add the Parquet tables to the site
