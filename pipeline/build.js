@@ -6,6 +6,7 @@
 //   node pipeline/build.js --only ipl,t20i-m     limit to some competitions
 //   node pipeline/build.js --no-wiki             skip Wikipedia career totals
 //   node pipeline/build.js --wiki-local <dir>    read <dir>/people.csv and <dir>/wiki.json instead of downloading
+//   node pipeline/build.js --export <dir>        also write database tables as gzipped CSV (see make_db.py)
 //
 // Output goes to public/data/ (served as-is by the site).
 
@@ -19,6 +20,7 @@ import { CompetitionAggregator } from './aggregate.js';
 import { buildLeaders } from './leaders.js';
 import { fetchWikiCareers, parseRegister } from './wiki.js';
 import { WIKI_FORMAT, combine } from './careers.js';
+import { Exporter } from './export.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -30,6 +32,7 @@ const OUT = path.resolve(opt('--out') || path.join(ROOT, 'public', 'data'));
 const CACHE = path.resolve(opt('--cache') || path.join(ROOT, '.cache'));
 const NO_WIKI = args.includes('--no-wiki');
 const WIKI_LOCAL = opt('--wiki-local');
+const EXPORT = opt('--export'); // also write relational CSVs for the downloadable database
 const PER_COMP_RESULTS = Infinity; // full results history for every competition
 const PLAYER_RECENT = 15;
 
@@ -179,7 +182,10 @@ async function addWikipediaCareers({ compData, people, leaders, compMeta, tmpOut
   for (const id of byPlayer.keys()) { if (people.has(id)) { if (id.startsWith('w')) stats.wikiOnly += 1; else stats.matched += 1; } }
   log(`all-time tables: ${JSON.stringify(stats)}`);
   const rejected = wiki.rejected || [];
-  return { players: wiki.size, matched: stats.matched, wikiOnly: stats.wikiOnly, byComp: stats.byComp, rejectedCount: rejected.length, rejectedSample: rejected.slice(0, 25), fetchedAt: new Date().toISOString() };
+  return {
+    register,
+    meta: { players: wiki.size, matched: stats.matched, wikiOnly: stats.wikiOnly, byComp: stats.byComp, rejectedCount: rejected.length, rejectedSample: rejected.slice(0, 25), fetchedAt: new Date().toISOString() },
+  };
 }
 
 async function main() {
@@ -196,6 +202,8 @@ async function main() {
   const compData = new Map(); // comp id -> { rows, ledger }
   const tmpOut = OUT + '.tmp';
   fs.rmSync(tmpOut, { recursive: true, force: true });
+  const exporter = EXPORT ? new Exporter(path.resolve(EXPORT)) : null;
+  let register = null; // cricinfo id -> cricsheet id (filled by the Wikipedia step)
 
   for (const comp of comps) {
     const dir = await sourceDir(comp);
@@ -208,8 +216,9 @@ async function main() {
 
     for (const f of files) {
       let m;
+      let raw;
       try {
-        const raw = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+        raw = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
         if (comp.gender && raw.info && raw.info.gender && raw.info.gender !== comp.gender) continue;
         m = parseMatch(raw, path.basename(f, '.json'));
       } catch (err) {
@@ -218,6 +227,7 @@ async function main() {
         continue;
       }
       agg.add(m);
+      if (exporter) { exporter.match(raw, m, comp.id); await exporter.drain(); }
       const s = summary(m, comp.id);
       compSummaries.push(s);
       allSummaries.push(s);
@@ -300,10 +310,27 @@ async function main() {
   let wikiMeta = null;
   if (!NO_WIKI && [...compData.keys()].some((id) => WIKI_FORMAT[id])) {
     try {
-      wikiMeta = await addWikipediaCareers({ compData, people, leaders, compMeta, tmpOut });
+      const res = await addWikipediaCareers({ compData, people, leaders, compMeta, tmpOut });
+      wikiMeta = res.meta;
+      register = res.register;
     } catch (err) {
       log(`Wikipedia step failed, publishing Cricsheet-only stats: ${err.stack || err.message}`);
     }
+  }
+
+  // Database export: players and complete careers
+  if (exporter) {
+    const cricinfoOf = new Map();
+    if (register) for (const [ci, csId] of register) if (!cricinfoOf.has(csId)) cricinfoOf.set(csId, ci);
+    for (const c of compMeta) exporter.competition(c);
+    for (const [id, p] of people) {
+      if (!Object.keys(p.comps).length && !p.career) continue;
+      exporter.player(id, p, /^w\d+$/.test(id) ? id.slice(1) : cricinfoOf.get(id));
+      for (const [cid, c] of Object.entries(p.career || {})) exporter.career(id, p.fn || p.n, cid, c);
+      await exporter.drain();
+    }
+    await exporter.close();
+    log(`database tables written to ${path.resolve(EXPORT)}`);
   }
 
   // Players: search index + sharded detail files
