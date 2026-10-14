@@ -1,70 +1,52 @@
-# Getting Started with Create React App
+# CricStats
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Career stats, leaderboards, records and scorecards for international cricket (men's and women's Tests, ODIs and T20Is) and the major franchise leagues, rebuilt every day from [Cricsheet](https://cricsheet.org) ball-by-ball data.
 
-## Available Scripts
+## How it works
 
-In the project directory, you can run:
+There is no server or database. Once a day a GitHub Action:
 
-### `npm start`
+1. downloads each competition's zip from Cricsheet,
+2. computes every stat from the ball-by-ball records (`pipeline/`),
+3. writes the results as static JSON into `public/data/`,
+4. builds the React site and publishes it to GitHub Pages.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+If a download or test fails, the run stops and the previous version of the site stays live.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```
+pipeline/
+  competitions.js   which competitions are covered (add a league here)
+  parse.js          one match -> scorecard; all the counting rules live here
+  aggregate.js      scorecards -> career stats, records, team results, seasons
+  leaders.js        home-page leaderboards and qualification rules
+  build.js          download, aggregate, write public/data
+  test/             unit tests for the counting rules
+  sample/           synthetic data generator for offline development
+src/                React front end (Vite)
+.github/workflows/deploy.yml   daily refresh and deploy
+```
 
-### `npm test`
+## Running it locally
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Requires Node 20 or newer.
 
-### `npm run build`
+```bash
+npm install
+npm run data          # download real data from Cricsheet (a few minutes)
+# or, offline:
+npm run data:sample   # generate synthetic matches with fake teams and players
+npm run dev           # open http://localhost:5173
+npm test              # check the stats rules
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Adding a competition
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Add an entry to `pipeline/competitions.js` with the zip name from [cricsheet.org/downloads](https://cricsheet.org/downloads/). It shows up everywhere on the next run.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Counting rules
 
-### `npm run eject`
+Balls faced include no-balls but not wides. Bowlers are charged runs off the bat, wides and no-balls, but not byes or leg-byes, and are credited with bowled, caught, lbw, stumped and hit-wicket dismissals. Retired hurt is not a dismissal. Super Overs appear on scorecards but are excluded from career figures. Coverage for older eras is incomplete, so some historical careers are partial.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Data licence
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Match data © Cricsheet, available under the [Open Data Commons Attribution License](https://opendatacommons.org/licenses/by/1-0/). The site credits Cricsheet in its footer and About page, as the licence requires.
