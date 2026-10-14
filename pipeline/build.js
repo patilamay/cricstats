@@ -319,6 +319,7 @@ async function main() {
       register = res.register;
     } catch (err) {
       log(`Wikipedia step failed, publishing Cricsheet-only stats: ${err.stack || err.message}`);
+      console.log(`::warning title=Wikipedia step failed::${String(err.stack || err.message).replace(/\n/g, '%0A')}`);
     }
   }
 
@@ -333,6 +334,7 @@ async function main() {
       log(`historical matches: ${JSON.stringify(histStats)}`);
     } catch (err) {
       log(`History step failed, publishing without historical matches: ${err.stack || err.message}`);
+      console.log(`::warning title=History step failed::${String(err.stack || err.message).replace(/\n/g, '%0A')}`);
     }
   }
 
