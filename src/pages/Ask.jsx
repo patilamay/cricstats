@@ -99,7 +99,7 @@ export default function Ask() {
       )}
 
       <div className="ask-examples" role="group" aria-label="Example questions">
-        {EXAMPLES.map((ex) => (
+        {EXAMPLES.slice(0, 6).map((ex) => (
           <button key={ex.q} type="button" disabled={!!stage} onClick={() => { setQ(ex.q); go(ex.q, ex); }}>{ex.q}</button>
         ))}
       </div>
