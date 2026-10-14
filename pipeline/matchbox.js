@@ -31,7 +31,14 @@ export const TEAM_CODES = {
   CHI: 'Chile', POR: 'Portugal', HUN: 'Hungary', SRB: 'Serbia', GRE: 'Greece', CYP: 'Cyprus', EST: 'Estonia', CRO: 'Croatia',
   SVN: 'Slovenia', SUI: 'Switzerland', TUR: 'Turkey', ISR: 'Israel', IRN: 'Iran', MGL: 'Mongolia', GAM: 'Gambia', ZAM: 'Zambia',
   CRC: 'Costa Rica', ARG2: 'Argentina', SKN: 'Saint Kitts and Nevis', TKM: 'Turkmenistan', KSA: 'Saudi Arabia', CAM: 'Cambodia',
-  TAH: 'French Polynesia', TGA: 'Tonga', SVK: 'Slovakia', NZ2: 'New Zealand', TTO: 'Trinidad and Tobago',
+  TAH: 'French Polynesia', TGA: 'Tonga', SVK: 'Slovakia', NZ2: 'New Zealand',
+  ZAF: 'South Africa', LKA: 'Sri Lanka', OMN: 'Oman', MYS: 'Malaysia', INA: 'Indonesia', FJI: 'Fiji', TON: 'Tonga',
+  NCL: 'New Caledonia', URU: 'Uruguay', CIV: "Cote d'Ivoire", MAW: 'Malawi', BIZ: 'Belize', SLO: 'Slovenia',
+  TCA: 'Turks and Caicos Islands', MAR: 'Morocco', SGP: 'Singapore', BRU: 'Brunei', ARE: 'United Arab Emirates',
+  NLD: 'Netherlands', TZA: 'Tanzania', DNK: 'Denmark', JEY: 'Jersey', IMN: 'Isle of Man', SUR: 'Suriname', MLI: 'Mali',
+  GGY: 'Guernsey', SEY: 'Seychelles', COL: 'Colombia', FLK: 'Falkland Islands', CYM: 'Cayman Islands',
+  SWAZILAND: 'Eswatini', 'SAINT HELENA': 'Saint Helena', MOROCCO: 'Morocco', BRUNEI: 'Brunei', SEYCHELLES: 'Seychelles',
+  'NEW CALEDONIA': 'New Caledonia', SURINAME: 'Suriname',
 };
 const TEAM_NAMES = new Map(Object.values(TEAM_CODES).map((n) => [n.toUpperCase(), n]));
 // Full-name forms used inside templates, e.g. {{cr|India}} or {{cr|West Indies}}

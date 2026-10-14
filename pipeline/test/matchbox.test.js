@@ -149,3 +149,15 @@ test('full scorecards from batting/bowling box templates', () => {
   assert.equal(inn.bat[0].how, 'c †Dujon b Roberts');
   assert.deepEqual(inn.bowl[0], { name: 'Andy Roberts', title: 'Andy Roberts (cricketer)', overs: '10', maidens: 3, runs: 32, wkts: 3, wides: 0, noballs: 0 });
 });
+
+test('dedupe merges copies of the same match from different articles', async () => {
+  const { dedupe } = await import('../history.js');
+  const base = { comp: 'test-m', teams: ['A', 'B'], innings: [{ team: 'A', r: 300, w: 10, bat: [], bowl: [] }, { team: 'B', r: 250, w: 10, bat: [], bowl: [] }] };
+  const out = dedupe([
+    { ...base, date: '2005-01-02', cricinfo: null },
+    { ...base, date: '2005-01-03', cricinfo: '111', venue: 'X' },
+    { ...base, date: '2005-02-10', innings: [{ team: 'A', r: 100, w: 10, bat: [], bowl: [] }] },
+  ]);
+  assert.equal(out.length, 2);
+  assert.equal(out.find((m) => m.innings.length === 2).cricinfo, '111');
+});

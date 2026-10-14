@@ -7,6 +7,7 @@
 //   node pipeline/build.js --no-wiki             skip Wikipedia career totals
 //   node pipeline/build.js --wiki-local <dir>    read <dir>/people.csv and <dir>/wiki.json instead of downloading
 //   node pipeline/build.js --export <dir>        also write database tables as gzipped CSV (see make_db.py)
+//   node pipeline/build.js --history-local <f>   historical matches from a local JSON file instead of Wikipedia
 //
 // Output goes to public/data/ (served as-is by the site).
 
@@ -21,6 +22,8 @@ import { buildLeaders } from './leaders.js';
 import { fetchWikiCareers, parseRegister } from './wiki.js';
 import { WIKI_FORMAT, combine } from './careers.js';
 import { Exporter } from './export.js';
+import { fetchHistory } from './history.js';
+import { mergeHistory } from './history-merge.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -33,6 +36,7 @@ const CACHE = path.resolve(opt('--cache') || path.join(ROOT, '.cache'));
 const NO_WIKI = args.includes('--no-wiki');
 const WIKI_LOCAL = opt('--wiki-local');
 const EXPORT = opt('--export'); // also write relational CSVs for the downloadable database
+const HISTORY_LOCAL = opt('--history-local'); // JSON { compId: [matches] } instead of fetching from Wikipedia
 const PER_COMP_RESULTS = Infinity; // full results history for every competition
 const PLAYER_RECENT = 15;
 
@@ -318,6 +322,20 @@ async function main() {
     }
   }
 
+  // Historical internationals (before ball-by-ball data, plus matches Cricsheet withholds)
+  let histStats = null;
+  if (!NO_WIKI) {
+    try {
+      const byComp = HISTORY_LOCAL
+        ? new Map(Object.entries(JSON.parse(fs.readFileSync(path.resolve(HISTORY_LOCAL), 'utf8'))))
+        : await fetchHistory({ cacheDir: path.join(CACHE, 'wiki') });
+      histStats = mergeHistory({ byComp, allSummaries, people, tmpOut, compMeta, exporter });
+      log(`historical matches: ${JSON.stringify(histStats)}`);
+    } catch (err) {
+      log(`History step failed, publishing without historical matches: ${err.stack || err.message}`);
+    }
+  }
+
   // Database export: players and complete careers
   if (exporter) {
     const cricinfoOf = new Map();
@@ -374,6 +392,7 @@ async function main() {
     competitions: compMeta,
     totals: { matches: recent.length, players: index.length, scorecards: keep.size },
     wiki: wikiMeta,
+    history: histStats,
   });
 
   // Swap the new data in only after everything succeeded.

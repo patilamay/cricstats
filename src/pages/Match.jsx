@@ -63,6 +63,77 @@ function Innings({ inn, ballsOnly }) {
   );
 }
 
+// Matches without ball-by-ball data: a summary scorecard from Wikipedia (innings totals and top
+// performers), or the full scorecard where Wikipedia records one.
+function HistoryMatch({ m }) {
+  const perf = (b) => <><PlayerLink id={b.id} name={b.name} /> {b.runs}{b.no ? '*' : ''}{b.balls != null ? <span className="muted"> ({b.balls})</span> : null}</>;
+  const wikiUrl = m.article ? `https://en.wikipedia.org/wiki/${encodeURIComponent(m.article.replace(/ /g, '_'))}` : null;
+  return (
+    <div className="page match-page">
+      <header className="match-head">
+        <p className="match-meta"><CompLabel id={m.c} /></p>
+        <h1>{m.teams.join(' v ')}</h1>
+        <p className="match-result">{m.result || 'Result not recorded'}</p>
+        <p className="muted">{date(m.date)}{m.venue ? `, ${m.venue}` : ''}</p>
+        <p className="muted">
+          {m.toss && `${m.toss} `}
+          {m.pomText && <>Player of the match: {m.pomText}. </>}
+          {m.umpires && <>Umpires: {m.umpires}.</>}
+        </p>
+      </header>
+
+      {m.full ? m.full.map((inn, k) => (
+        <section className="innings" key={k}>
+          <div className="innings-head">
+            <h2>{inn.team}</h2>
+            <p className="innings-total"><strong>{inn.total}{inn.wkts != null && inn.wkts < 10 ? `/${inn.wkts}` : ''}{inn.declared ? 'd' : ''}</strong> {inn.overs && <span className="muted">({inn.overs} ov)</span>}</p>
+          </div>
+          <div className="table-wrap">
+            <table className="data scorecard">
+              <thead><tr><th className="text" scope="col">Batter</th><th className="text" scope="col"><span className="visually-hidden">How out</span></th><th className="num" scope="col">R</th><th className="num" scope="col">B</th><th className="num" scope="col">4s</th><th className="num" scope="col">6s</th></tr></thead>
+              <tbody>
+                {inn.bat.map((b, i) => (
+                  <tr key={i}><td className="text"><PlayerLink id={b.id} name={b.name} /></td><td className="text how">{b.how}</td><td className="num strong">{b.runs ?? '–'}</td><td className="num">{b.balls ?? '–'}</td><td className="num">{b.fours ?? '–'}</td><td className="num">{b.sixes ?? '–'}</td></tr>
+                ))}
+                {inn.extras != null && <tr className="sub-row"><td className="text">Extras</td><td /><td className="num">{inn.extras}</td><td colSpan={3} /></tr>}
+              </tbody>
+            </table>
+          </div>
+          {inn.bowl.length > 0 && (
+            <div className="table-wrap">
+              <table className="data scorecard">
+                <thead><tr><th className="text" scope="col">Bowler</th><th className="num" scope="col">O</th><th className="num" scope="col">M</th><th className="num" scope="col">R</th><th className="num" scope="col">W</th></tr></thead>
+                <tbody>{inn.bowl.map((w, i) => <tr key={i}><td className="text"><PlayerLink id={w.id} name={w.name} /></td><td className="num">{w.overs ?? '–'}</td><td className="num">{w.maidens ?? '–'}</td><td className="num">{w.runs ?? '–'}</td><td className="num strong">{w.wkts ?? '–'}</td></tr>)}</tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )) : (
+        <section className="summary-card" aria-label="Summary scorecard">
+          {m.innings.map((inn, k) => (
+            <div className="summary-inn" key={k}>
+              <div className="summary-total">
+                <span className="summary-team">{inn.team}</span>
+                <span className="summary-score">{inn.total}{inn.overs ? <span className="muted"> ({inn.overs} ov)</span> : null}</span>
+              </div>
+              <div className="summary-perf">
+                {inn.bat.length > 0 && <p><span className="perf-label">Top scorers</span> {inn.bat.map((b, i) => <span key={i} className="perf">{perf(b)}</span>)}</p>}
+                {inn.bowl.length > 0 && <p><span className="perf-label">Top bowling</span> {inn.bowl.map((w, i) => <span key={i} className="perf"><PlayerLink id={w.id} name={w.name} /> {w.w}/{w.r}</span>)}</p>}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      <p className="muted source-note">
+        {m.full ? 'Full scorecard' : 'Summary scorecard: innings totals and top performers'} from{' '}
+        {wikiUrl ? <a href={wikiUrl}>Wikipedia</a> : 'Wikipedia'} (CC BY-SA 4.0). Ball-by-ball records don't exist for this match.
+        {m.cricinfo && <> <a href={cricinfo(m.cricinfo)}>Full scorecard on ESPNcricinfo</a></>}
+      </p>
+    </div>
+  );
+}
+
 export default function Match() {
   const { id } = useParams();
   const { data: m, error } = useData(`match/${id}.json`);
@@ -76,6 +147,7 @@ export default function Match() {
     );
   }
   if (!m) return <div className="page"><p className="loading">Loading scorecard…</p></div>;
+  if (m.hist) return <HistoryMatch m={m} />;
 
   const ballsOnly = m.bpo === 5;
   return (

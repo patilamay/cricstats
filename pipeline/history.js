@@ -21,7 +21,7 @@ const TEMPLATES = [
   'Template:Limited overs international',
   'Template:Cricket match batsman status', // full scorecards for notable matches
 ];
-const PARSER_VERSION = 4;
+const PARSER_VERSION = 5;
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), '[history]', ...a);
 
 async function articlesUsing(template) {
@@ -40,28 +40,48 @@ async function articlesUsing(template) {
 // Pick the most complete of several copies of the same match.
 const richness = (m) => m.innings.length * 10 + m.innings.reduce((a, i) => a + i.bat.length + i.bowl.length, 0) + (m.cricinfo ? 5 : 0) + (m.venue ? 1 : 0);
 
+// The same match often appears in several articles (tour, trophy, season, ground), sometimes
+// with slightly different dates. Teams plus the innings totals identify a match uniquely, so
+// copies are merged on that signature, then on ESPNcricinfo id, then on teams within 3 days.
+const sig = (m) => `${m.comp}|${[...m.teams].sort().join('|')}|${m.innings.map((i) => `${i.r}/${i.w}`).sort().join(',')}`;
+const dayNum = (d) => Math.floor(Date.parse(d) / 86400000);
+
 export function dedupe(matches) {
-  const byKey = new Map();
-  for (const m of matches) {
-    const key = `${m.comp}|${m.date}|${[...m.teams].sort().join('|')}`;
-    const prev = byKey.get(key);
-    if (!prev || richness(m) > richness(prev)) byKey.set(key, m);
-  }
-  // A second pass on cricinfo id catches copies with slightly different dates.
+  const groups = [];
+  const bySig = new Map();
   const byId = new Map();
-  const out = [];
-  for (const m of byKey.values()) {
-    if (m.cricinfo) {
-      const prev = byId.get(m.cricinfo);
-      if (prev) { if (richness(m) > richness(prev)) out[out.indexOf(prev)] = m; byId.set(m.cricinfo, m); continue; }
-      byId.set(m.cricinfo, m);
+  const byTeams = new Map(); // comp|teams -> groups (for date proximity)
+  for (const m of matches) {
+    let g = bySig.get(sig(m)) || (m.cricinfo && byId.get(m.cricinfo));
+    if (!g) {
+      const near = (byTeams.get(`${m.comp}|${[...m.teams].sort().join('|')}`) || [])
+        .find((x) => Math.abs(dayNum(x.best.date) - dayNum(m.date)) <= 3 && sameScores(x.best, m));
+      g = near;
     }
-    out.push(m);
+    if (!g) {
+      g = { best: m };
+      groups.push(g);
+      const tk = `${m.comp}|${[...m.teams].sort().join('|')}`;
+      if (!byTeams.has(tk)) byTeams.set(tk, []);
+      byTeams.get(tk).push(g);
+    } else if (richness(m) > richness(g.best)) {
+      g.best = { ...m, cricinfo: m.cricinfo || g.best.cricinfo };
+    } else if (!g.best.cricinfo && m.cricinfo) {
+      g.best = { ...g.best, cricinfo: m.cricinfo };
+    }
+    bySig.set(sig(m), g);
+    if (m.cricinfo) byId.set(m.cricinfo, g);
   }
-  return out;
+  return groups.map((g) => g.best);
 }
 
-export const unknownTeamCodes = new Map(); // for the coverage report
+// Scores agree where both copies have them (one copy may omit an innings).
+function sameScores(a, b) {
+  const sa = a.innings.map((i) => `${i.team}:${i.r}`);
+  const sb = new Set(b.innings.map((i) => `${i.team}:${i.r}`));
+  const common = sa.filter((x) => sb.has(x)).length;
+  return common >= Math.min(a.innings.length, b.innings.length, 2) || (!a.innings.length || !b.innings.length);
+}
 
 export function extractFromArticle(title, text) {
   const out = [];
@@ -140,4 +160,12 @@ export function parseResult(text, teams) {
     draw: !winner && /\bdrawn?\b/.test(s),
     noResult: !winner && /no result|abandoned|cancelled/.test(s),
   };
+}
+
+// The full-scorecard innings that matches summary innings k: the n-th innings of the same team.
+export function fullInnings(m, k) {
+  if (!m.full) return null;
+  const team = m.innings[k].team;
+  const nth = m.innings.slice(0, k).filter((i) => i.team === team).length;
+  return m.full.filter((f) => f.team === team)[nth] || null;
 }

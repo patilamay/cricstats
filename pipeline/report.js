@@ -60,3 +60,22 @@ for (const id of (process.env.REPORT_PLAYERS || '').split(',').filter(Boolean)) 
   const career = Object.entries(p.career || {}).map(([c, v]) => `${c}: m=${v.m} src=${v.src}`);
   notice(`Player ${id}`, [`${p.n} / ${p.fn || ''} country=${p.country || ''} wiki=${p.wiki || ''}`, ...comps, ...career]);
 }
+
+// Historical matches (Wikipedia match summaries) and the resulting all-time records.
+if (meta.history) {
+  const lines = [`added per format: ${JSON.stringify(meta.history)}`];
+  for (const comp of ['test-m', 'odi-m', 'test-w']) {
+    const f = path.join(DATA, 'comp', comp, 'records.json');
+    if (!fs.existsSync(f)) continue;
+    const r = JSON.parse(fs.readFileSync(f, 'utf8'));
+    lines.push(`${comp} highest totals: ${r.highestTotals.slice(0, 5).map((x) => `${x.team} ${x.runs}${x.allOut ? '' : `/${x.wkts}`} (${x.date.slice(0, 4)})`).join(', ')}`);
+    lines.push(`${comp} lowest totals: ${r.lowestTotals.slice(0, 5).map((x) => `${x.team} ${x.runs} (${x.date.slice(0, 4)})`).join(', ')}`);
+    lines.push(`${comp} highest scores: ${r.highestScores.slice(0, 6).map((x) => `${x.name} ${x.runs}${x.no ? '*' : ''} (${x.date.slice(0, 4)})`).join(', ')}`);
+    lines.push(`${comp} best bowling: ${r.bestFigures.slice(0, 5).map((x) => `${x.name} ${x.wkts}/${x.runs} (${x.date.slice(0, 4)})`).join(', ')}`);
+    const t = JSON.parse(fs.readFileSync(path.join(DATA, 'comp', comp, 'teams.json'), 'utf8'));
+    lines.push(`${comp} team matches: ${t.slice(0, 6).map((x) => `${x.team} ${x.m} (W${x.w} L${x.l} D${x.d})`).join(', ')}`);
+  }
+  notice('History', lines);
+} else {
+  console.log('::warning title=History::No historical matches in this build.');
+}
