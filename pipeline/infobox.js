@@ -60,6 +60,8 @@ export function clean(v) {
   s = s.replace(/<!--[\s\S]*?-->/g, '');
   s = s.replace(/<ref[^>]*\/>/gi, '').replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, '');
   s = s.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '');
+  // Footnotes and citation tags are not part of the value ({{refn|23 for Ireland; 225 for England}}).
+  for (let k = 0; k < 3; k++) s = s.replace(/\{\{\s*(refn|efn|efn-[a-z]+|notetag|#tag:ref|sfn|sfnp|r|cn|citation needed|fact|dubious|clarify|when)\b[^{}]*\}\}/gi, '');
   // {{0}} / {{0|00}} are invisible alignment padding — drop entirely.
   s = s.replace(/\{\{\s*0\s*(\|[^{}]*)?\}\}/g, '');
   // Templates that render a symbol.
@@ -83,17 +85,25 @@ export function clean(v) {
 
 const isBlank = (s) => s === '' || /^[–—\-−]+$/.test(s) || /^n\/?a$/i.test(s);
 
+// The first number in the cell. Cells for players who represented two countries hold two numbers
+// ("248 (23 for Ireland)", "109<br>54"); joining their digits gave nonsense like 24823.
+// Commas between digits are thousands separators.
+function firstNumber(v, re) {
+  const s = clean(v).replace(/(\d),(?=\d)/g, '$1');
+  if (isBlank(s.replace(/\s/g, ''))) return null;
+  const m = re.exec(s);
+  return m ? m[0] : null;
+}
+
 export function toInt(v) {
-  const s = clean(v).replace(/[,\s]/g, '');
-  if (isBlank(s)) return null;
-  const n = parseInt(s, 10);
+  const t = firstNumber(v, /\d+/);
+  const n = t == null ? NaN : parseInt(t, 10);
   return Number.isFinite(n) ? n : null;
 }
 
 export function toFloat(v) {
-  const s = clean(v).replace(/[,\s]/g, '');
-  if (isBlank(s)) return null;
-  const n = parseFloat(s);
+  const t = firstNumber(v, /\d*\.\d+|\d+/);
+  const n = t == null ? NaN : parseFloat(t);
   return Number.isFinite(n) ? n : null;
 }
 
@@ -207,6 +217,7 @@ export function parseInfobox(wikitext) {
 // Sanity checks that catch garbled infoboxes (wrong cell, stray digits). Returns a reason or null.
 export function implausible(format, r) {
   const maxInn = format === 'Test' ? 2 * r.m : r.m;
+  if (r.m > ({ Test: 250, ODI: 550, T20I: 450 }[format] || 600)) return 'more matches than anyone has played';
   if (r.c100 + r.c50 > maxInn) return 'more 50s/100s than innings';
   if (r.hs != null && r.hs > r.r) return 'top score above career runs';
   if (r.avg != null && r.avg > 0 && r.r / r.avg > maxInn + 0.5) return 'average implies more dismissals than innings';
