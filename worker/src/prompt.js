@@ -44,6 +44,7 @@ careers(player_id, player, competition_id, source, wikipedia_as_of, matches, run
   - COMPLETE international careers (all eras, e.g. Bradman, Tendulkar) for 'test-m','odi-m','t20i-m','test-w','odi-w','t20i-w'.
   - Use careers for all-time career totals in international cricket. player here is already the full name.
   - careers has no team column. For a country, JOIN players p USING (player_id) and filter p.country = 'India'.
+    players.country is the team a player represents (say "for India", never "India-born").
     Wikipedia-based totals can include a few matches for composite sides (World XI, Asia XI).
 
 history_matches(match_id, competition_id, start_date, team1, team2, venue, result, toss, umpires, player_of_match,
