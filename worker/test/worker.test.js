@@ -39,7 +39,7 @@ test('/sql returns the tool-call SQL; sends key, model and cached system prompt'
   const calls = mockAnthropic(() => ({ content: [{ type: 'tool_use', name: 'give_sql', input: { sql: 'SELECT 1 AS x', note: 'demo' } }] }));
   const res = await worker.fetch(req('/sql', { question: 'Who scored the most T20I runs in 2024?' }), env());
   assert.equal(res.status, 200);
-  assert.deepEqual(await res.json(), { sql: 'SELECT 1 AS x', note: 'demo', rejected: false });
+  assert.deepEqual(await res.json(), { sql: 'SELECT 1 AS x', note: 'demo', standalone: 'Who scored the most T20I runs in 2024?', rejected: false });
   assert.equal(res.headers.get('Access-Control-Allow-Origin'), ORIGIN);
   assert.equal(calls[0].headers['x-api-key'], 'test-key');
   assert.equal(calls[0].body.model, 'claude-haiku-5-5');
@@ -87,4 +87,18 @@ test('upstream failure gives a friendly 502', async () => {
   const res = await worker.fetch(req('/sql', { question: 'q' }), env());
   assert.equal(res.status, 502);
   assert.match((await res.json()).error, /could not be answered/);
+});
+
+test('/sql sends earlier turns for follow-ups and returns the standalone question', async () => {
+  const calls = mockAnthropic(() => ({ content: [{ type: 'tool_use', input: { standalone: 'Most T20I runs in 2023', sql: 'SELECT 2023', note: 'n' } }] }));
+  const history = [
+    { question: 'Most T20I runs in 2024?', sql: 'SELECT 2024', result: 'player | runs\nMuhammad Waseem | 882' },
+    ...Array.from({ length: 6 }, (_, i) => ({ question: `old ${i}`, sql: 'x'.repeat(5000) })),
+  ];
+  const out = await (await worker.fetch(req('/sql', { question: 'what about 2023?', history }), env())).json();
+  assert.equal(out.standalone, 'Most T20I runs in 2023');
+  const text = calls[0].body.messages[0].content;
+  assert.match(text, /Follow-up question .*what about 2023\?/);
+  assert.doesNotMatch(text, /Most T20I runs in 2024/); // only the last 4 turns are kept
+  assert.ok(text.length < 4 * 3200);
 });
