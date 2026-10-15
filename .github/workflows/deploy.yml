@@ -1,13 +1,24 @@
 name: Refresh data and deploy
 
-# Rebuilds every stat from Cricsheet's latest data and publishes the site to GitHub Pages.
+# Publishes the site to GitHub Pages, in one of two modes:
+#  - full refresh: rebuilds every stat from Cricsheet and Wikipedia (~20-30 min). Runs on the daily
+#    schedule, when the data pipeline itself changes, or when started by hand with "refresh data" ticked.
+#  - site only: reuses the data published by the last full refresh (the "data" release) and just
+#    rebuilds the website (~3 min). Used for every other change.
 on:
   schedule:
     - cron: '17 6 * * *' # daily, 06:17 UTC (Cricsheet usually publishes overnight UK time)
   push:
     branches: [master]
+    paths-ignore: ['worker/**'] # the Ask worker deploys separately (worker.yml)
   pull_request: # build and report only; never deploys
+    paths-ignore: ['worker/**']
   workflow_dispatch:
+    inputs:
+      refresh_data:
+        description: Re-download Cricsheet and Wikipedia data (unticked = rebuild the site only)
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -28,6 +39,45 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # to see which files a push changed
+
+      - name: Decide between a full refresh and a site-only build
+        id: mode
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          REFRESH: ${{ inputs.refresh_data }}
+          BEFORE: ${{ github.event.before }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          full=false
+          case "$EVENT" in
+            schedule) full=true ;;
+            workflow_dispatch) [ "$REFRESH" = "true" ] && full=true ;;
+            *)
+              base="${PR_BASE:-$BEFORE}"
+              if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+                full=true
+              elif git diff --name-only "$base" HEAD | grep -qE '^(pipeline/|package(-lock)?\.json$)'; then
+                echo "The data pipeline changed, so the data is rebuilt."
+                full=true
+              fi ;;
+          esac
+          if [ "$full" = false ]; then
+            # Reuse the last full refresh. If it isn't there (first run), fall back to a full refresh.
+            mkdir -p .cache/release
+            if gh release download data -D .cache/release -p cricstats-site-data.zip -p cricstats-parquet.zip --clobber; then
+              rm -rf public/data && mkdir -p public/data .cache/db
+              unzip -q .cache/release/cricstats-site-data.zip -d public/data
+              unzip -q .cache/release/cricstats-parquet.zip -d .cache/db
+              echo "Site-only build using the data from the last full refresh."
+            else
+              echo "::notice::No saved site data yet, so this run does a full refresh."
+              full=true
+            fi
+          fi
+          echo "full=$full" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v5
         with:
@@ -45,6 +95,7 @@ jobs:
 
       # Wikipedia pages are cached between runs; only changed pages are downloaded again.
       - name: Restore Wikipedia cache
+        if: steps.mode.outputs.full == 'true'
         uses: actions/cache@v4
         with:
           path: .cache/wiki
@@ -52,27 +103,32 @@ jobs:
           restore-keys: wiki-cache-
 
       - name: Download Cricsheet and Wikipedia data and compute stats
+        if: steps.mode.outputs.full == 'true'
         run: npm run data -- --export .cache/export
 
       - name: Build the downloadable database (DuckDB + Parquet)
+        if: steps.mode.outputs.full == 'true'
         run: |
           python3 -m pip install --quiet duckdb
           python3 pipeline/make_db.py .cache/export .cache/db
           (cd .cache/db && zip -q -r ../cricstats-parquet.zip parquet README.md)
+          # The site's own JSON files, so code-only changes can redeploy without recomputing everything.
+          (cd public/data && zip -q -r ../../.cache/cricstats-site-data.zip .)
           gzip -c .cache/db/cricstats.duckdb > .cache/cricstats.duckdb.gz
           ls -la .cache/cricstats-parquet.zip .cache/cricstats.duckdb.gz .cache/db/cricstats.duckdb
 
       - name: Publish the database as the "data" release
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.mode.outputs.full == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           notes="Full CricStats database, rebuilt $(date -u +%Y-%m-%d). cricstats.duckdb.gz: DuckDB database (gunzip first). cricstats-parquet.zip: one Parquet file per table. Data: Cricsheet (ODC-BY 1.0) and Wikipedia (CC BY-SA 4.0)."
           gh release view data >/dev/null 2>&1 || gh release create data --title "CricStats database" --notes "$notes" --latest=false
           gh release edit data --notes "$notes"
-          gh release upload data .cache/cricstats.duckdb.gz .cache/cricstats-parquet.zip .cache/db/README.md --clobber
+          gh release upload data .cache/cricstats.duckdb.gz .cache/cricstats-parquet.zip .cache/cricstats-site-data.zip .cache/db/README.md --clobber
 
       - name: Report on the data
+        if: steps.mode.outputs.full == 'true'
         run: node pipeline/report.js
 
       - name: Build site
