@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseInfobox, clean, columnFormat, asOfDate } from '../infobox.js';
+import { parseInfobox, clean, columnFormat, asOfDate, toInt, toFloat, implausible } from '../infobox.js';
 
 // Shaped like the real Sachin Tendulkar infobox (markup styles seen on Wikipedia).
 const TENDULKAR = `{{Short description|Indian cricketer}}
@@ -129,4 +129,16 @@ test('implausible columns are rejected, names with links inside templates clean 
   const old = parseInfobox('{{Infobox cricketer | column1 = Test | matches1 = 10 | runs1 = 300 | bat avg1 = 20 | deliveries1 = 60 | wickets1 = 30 | bowl avg1 = 15 }}');
   assert.equal(old.formats['Test-m'].wk, 30);
   assert.equal(old.formats['Test-m'].balls, 0);
+});
+
+test('footnotes and second numbers are not glued onto a value', () => {
+  assert.equal(toInt('248{{refn|23 for Ireland; 225 for England|group=nb}}'), 248);
+  assert.equal(toInt('109<br/>54'), 109);
+  assert.equal(toInt('7,701'), 7701);
+  assert.equal(toInt('40 (24 for Australia)'), 40);
+  assert.equal(toInt('–'), null);
+  assert.equal(toFloat('39.29{{efn|for England}}'), 39.29);
+  assert.equal(toFloat('1,234.5'), 1234.5);
+  assert.equal(clean('248{{refn|23 for Ireland|group=nb}}'), '248');
+  assert.ok(implausible('ODI', { m: 24823, r: 7701, c100: 0, c50: 0, wk: 0, balls: 0, w5: 0, w10: 0 }));
 });

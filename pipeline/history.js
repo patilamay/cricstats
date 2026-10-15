@@ -21,7 +21,7 @@ const TEMPLATES = [
   'Template:Limited overs international',
   'Template:Cricket match batsman status', // full scorecards for notable matches
 ];
-const PARSER_VERSION = 7;
+const PARSER_VERSION = 8;
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), '[history]', ...a);
 
 async function articlesUsing(template) {
