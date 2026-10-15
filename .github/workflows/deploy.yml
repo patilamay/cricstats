@@ -67,7 +67,8 @@ jobs:
           if [ "$full" = false ]; then
             # Reuse the last full refresh. If it isn't there (first run), fall back to a full refresh.
             mkdir -p .cache/release
-            if gh release download data -D .cache/release -p cricstats-site-data.zip -p cricstats-parquet.zip --clobber; then
+            gh release download data -D .cache/release -p cricstats-site-data.zip -p cricstats-parquet.zip --clobber || true
+            if [ -s .cache/release/cricstats-site-data.zip ] && [ -s .cache/release/cricstats-parquet.zip ]; then
               rm -rf public/data && mkdir -p public/data .cache/db
               unzip -q .cache/release/cricstats-site-data.zip -d public/data
               unzip -q .cache/release/cricstats-parquet.zip -d .cache/db
