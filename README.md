@@ -17,7 +17,7 @@ Changes that don't touch the data pipeline skip steps 1–5: the site is rebuilt
 
 ## Ask (questions in plain English)
 
-The Ask page (`/ask`, also reached from the search box) answers questions like "Who scored the most T20I runs in 2024?". A small Cloudflare Worker (`worker/`) has Claude turn the question into SQL, and the query runs in the visitor's browser with DuckDB-WASM over the site's Parquet files. Setup and limits are in [worker/README.md](worker/README.md).
+The Ask page (`/ask`, also reached from the search box) answers questions like "Who scored the most T20I runs in 2024?". A small Cloudflare Worker (`worker/`) has Claude turn the question into SQL, and the query runs in the visitor's browser with DuckDB-WASM over the site's Parquet files. It's a conversation: follow-ups like "what about 2023?" use the last few questions as context. Setup and limits are in [worker/README.md](worker/README.md); changes to `worker/` deploy to Cloudflare automatically on merge.
 
 ## Download the database
 
