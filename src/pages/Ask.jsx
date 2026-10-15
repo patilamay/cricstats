@@ -26,6 +26,9 @@ function ResultTable({ columns, kinds, rows }) {
   );
 }
 
+// The SQL is only shown with ?debug in the address (handy when checking an answer).
+const DEBUG = typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug');
+
 function AnswerCard({ item }) {
   return (
     <article className="answer-card" aria-live="polite">
@@ -33,12 +36,12 @@ function AnswerCard({ item }) {
       {item.error ? <p className="notice">{item.error}</p> : item.cannot ? <p className="answer-text">{item.note}</p> : (
         <>
           {item.answer && <p className="answer-text">{item.answer}</p>}
-          {item.note && <p className="answer-note">{item.note}</p>}
+          {item.note && <p className="answer-note">How this was counted: {item.note}</p>}
           <ResultTable columns={item.columns} kinds={item.kinds} rows={item.rows} />
-          <details className="answer-sql">
+          {DEBUG && <details className="answer-sql">
             <summary>Show the query</summary>
             <pre><code>{item.sql}</code></pre>
-          </details>
+          </details>}
         </>
       )}
     </article>
@@ -114,7 +117,7 @@ export default function Ask() {
 
       <p className="muted ask-fine">
         Typed questions are turned into a database query by an AI model (Claude), then run in your browser against this site's data.
-        The model can misread a question, so check the query if a number looks off.
+        The model can misread a question, so check the "How this was counted" line if a number looks off.
       </p>
     </div>
   );
