@@ -4,7 +4,7 @@ Career stats, leaderboards, records and scorecards for international cricket (me
 
 ## How it works
 
-There is no server or database. Once a day a GitHub Action:
+There is no server or database. Once a day a GitHub Action (`.github/workflows/deploy.yml`) does a full refresh:
 
 1. downloads each competition's zip from Cricsheet,
 2. computes every stat from the ball-by-ball records (`pipeline/`),
@@ -12,6 +12,8 @@ There is no server or database. Once a day a GitHub Action:
 4. adds historical internationals without ball-by-ball data (mostly before 2002) from Wikipedia's per-match summary boxes: innings totals, top performers, result, venue, and full scorecards where Wikipedia has them (`pipeline/matchbox.js`, `pipeline/history.js`),
 5. writes the results as static JSON into `public/data/`, and the downloadable DuckDB/Parquet database,
 6. builds the React site and publishes it to GitHub Pages, with the Parquet tables under `/db/`.
+
+Changes that don't touch the data pipeline skip steps 1–5: the site is rebuilt from the data saved by the last full refresh (the `cricstats-site-data.zip` and Parquet files in the "data" release), which takes about 3 minutes. To force a full refresh, run the workflow by hand from the Actions tab with "refresh data" ticked.
 
 ## Ask (questions in plain English)
 

@@ -1,0 +1,49 @@
+name: Deploy Ask worker
+
+# Deploys worker/ (the Ask service) to Cloudflare whenever it changes on master.
+# Needs two repository secrets: CLOUDFLARE_API_TOKEN ("Edit Cloudflare Workers" token) and
+# CLOUDFLARE_ACCOUNT_ID. The Anthropic key stays a Cloudflare secret and is untouched by deploys.
+on:
+  push:
+    branches: [master]
+    paths: ['worker/**', '.github/workflows/worker.yml']
+  pull_request:
+    paths: ['worker/**', '.github/workflows/worker.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Test the worker
+        run: node --test worker/test/worker.test.js
+
+      - name: Deploy to Cloudflare
+        if: github.event_name != 'pull_request'
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN is not set, so the worker was not deployed. Add it under Settings > Secrets and variables > Actions, or run 'npx wrangler deploy' in worker/."
+            exit 0
+          fi
+          npx --yes wrangler@4.140.0 deploy

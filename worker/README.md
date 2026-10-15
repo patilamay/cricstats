@@ -41,8 +41,9 @@ You need Node.js 20 or newer, an Anthropic API key and a free Cloudflare account
 
 ## Changing things
 
-- **Model.** Edit `MODEL` in `wrangler.toml`, then `npx wrangler deploy`.
-- **Teaching it new kinds of questions.** Add worked examples to `EXAMPLES` in `src/prompt.js`. The first six also appear as buttons on the Ask page, so check each query against the real data first.
+- **Deploying.** Changes to this folder deploy automatically when merged to master (`.github/workflows/worker.yml`), once the repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are set. Without them, run `npx wrangler deploy` here.
+- **Model.** Edit `MODEL` in `wrangler.toml` and merge.
+- **Teaching it new kinds of questions.** Add worked examples to `EXAMPLES` in `src/prompt.js` and merge. The first six also appear as buttons on the Ask page, so check each query against the real data first.
 - **Tests.** Run `npm test` from the repository root (the worker tests mock the Anthropic API).
 - **Logs.** `npx wrangler tail` streams live requests and errors.
 
