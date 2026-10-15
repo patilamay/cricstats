@@ -23,7 +23,7 @@ export default function About() {
       <p>
         On the <Link to="/ask">Ask</Link> page you can type a question in plain English. An AI model (Claude, by Anthropic) turns it into a database query,
         which then runs in your browser against the same data as the rest of the site. The model sees your question and the first rows of the result, nothing else about you.
-        The query is shown with every answer, because the model can misread a question.
+        Each answer says how it was counted, because the model can misread a question.
       </p>
 
       <h2>Complete careers: Cricsheet plus Wikipedia</h2>

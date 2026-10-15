@@ -49,7 +49,7 @@ const SQL_TOOL = {
     type: 'object',
     properties: {
       sql: { type: ['string', 'null'], description: 'One read-only DuckDB SELECT query, or null.' },
-      note: { type: 'string', description: 'One short sentence: what the query measures, any assumption made (e.g. men\'s T20Is), or why it cannot be answered.' },
+      note: { type: 'string', description: 'One short plain-English sentence for a cricket fan (not a programmer): what was counted and any assumption made, e.g. "Men\'s T20Is in 2024, all teams." or "Full international careers, including matches before 2002." Never mention tables, columns, joins, SQL, IDs or super overs. If it cannot be answered, say why in the same plain style.' },
     },
     required: ['sql', 'note'],
   },
