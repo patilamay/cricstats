@@ -9,6 +9,8 @@ How it works:
 3. The query runs **in the visitor's browser** with DuckDB-WASM, reading the Parquet files the site publishes under `/db/`.
 4. The worker asks Claude for a one-sentence answer from the first rows of the result.
 
+It's a conversation: the page sends the last four questions with their queries and top rows, so follow-ups like "what about 2023?" or "and for women?" work. Claude also returns the follow-up rewritten as a standalone question, which the page shows as "Read as: …".
+
 The worker never sees the data, and the API key never reaches the browser. Without the worker the Ask page still works for the example questions, which run their saved queries directly.
 
 ## One-time setup (about 10 minutes)

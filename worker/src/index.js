@@ -1,6 +1,7 @@
 // CricStats "Ask" worker.
 //
-//   POST /sql     { question, previousSql?, error? }        -> { sql, note }
+//   POST /sql     { question, history?, previousSql?, error? } -> { sql, note, standalone }
+//                 history: up to 4 earlier turns [{ question, sql, result }] so follow-ups work
 //   POST /answer  { question, sql, columns, rows }           -> { answer }
 //
 // Holds the Anthropic API key (secret ANTHROPIC_API_KEY), limits requests per visitor, and only
@@ -49,14 +50,32 @@ const SQL_TOOL = {
     type: 'object',
     properties: {
       sql: { type: ['string', 'null'], description: 'One read-only DuckDB SELECT query, or null.' },
+      standalone: { type: 'string', description: 'The question rewritten to stand on its own, with any reference to earlier questions resolved, e.g. "what about 2023?" after a 2024 T20I runs question becomes "Most men\'s T20I runs in 2023". Same language as the user.' },
       note: { type: 'string', description: 'One short plain-English sentence for a cricket fan (not a programmer): what was counted and any assumption made, e.g. "Men\'s T20Is in 2024, all teams." or "Full international careers, including matches before 2002." Never mention tables, columns, joins, SQL, IDs or super overs. If it cannot be answered, say why in the same plain style.' },
     },
-    required: ['sql', 'note'],
+    required: ['standalone', 'sql', 'note'],
   },
 };
 
-export async function writeSql(env, { question, previousSql, error }) {
-  const messages = [{ role: 'user', content: `Question: ${question}` }];
+// Earlier turns of the conversation, trimmed to keep each request small.
+const MAX_TURNS = 4;
+export function cleanHistory(history) {
+  if (!Array.isArray(history)) return [];
+  return history.slice(-MAX_TURNS).map((h) => ({
+    question: String((h && h.question) || '').slice(0, 300),
+    sql: String((h && h.sql) || '').slice(0, 2000),
+    result: String((h && h.result) || '').slice(0, 600),
+  })).filter((h) => h.question);
+}
+
+function withHistory(question, history) {
+  if (!history.length) return `Question: ${question}`;
+  const turns = history.map((h, i) => `Q${i + 1}: ${h.question}\nSQL:\n${h.sql || '(none)'}\nResult (first rows):\n${h.result || '(not shown)'}`).join('\n\n');
+  return `Conversation so far (oldest first):\n\n${turns}\n\nFollow-up question (it may refer to the conversation above): ${question}`;
+}
+
+export async function writeSql(env, { question, previousSql, error, history = [] }) {
+  const messages = [{ role: 'user', content: withHistory(question, history) }];
   if (previousSql && error) {
     messages.push({ role: 'assistant', content: `SQL:\n${previousSql}` });
     messages.push({ role: 'user', content: `That query failed in DuckDB with: ${String(error).slice(0, 500)}\nReturn a corrected query.` });
@@ -71,7 +90,8 @@ export async function writeSql(env, { question, previousSql, error }) {
   const call = (out.content || []).find((c) => c.type === 'tool_use');
   if (!call) throw new Error('No query returned');
   const sql = call.input.sql ? safeSql(call.input.sql) : null;
-  return { sql, note: call.input.note || '', rejected: !!call.input.sql && !sql };
+  const standalone = String(call.input.standalone || question).slice(0, 300);
+  return { sql, note: call.input.note || '', standalone, rejected: !!call.input.sql && !sql };
 }
 
 export async function writeAnswer(env, { question, sql, columns, rows }) {
@@ -111,7 +131,7 @@ export default {
 
     try {
       if (url.pathname === '/sql') {
-        const out = await writeSql(env, { question, previousSql: body.previousSql, error: body.error });
+        const out = await writeSql(env, { question, previousSql: body.previousSql, error: body.error, history: cleanHistory(body.history) });
         return json(out, 200, cors);
       }
       const columns = Array.isArray(body.columns) ? body.columns.slice(0, 20).map(String) : [];

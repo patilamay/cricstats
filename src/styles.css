@@ -400,9 +400,7 @@ td.src-cell { color: var(--muted); font-size: 0.85rem; white-space: normal; min-
 .dot { width: 0.65rem; height: 0.65rem; border-radius: 50%; background: var(--coral); animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .dot { animation: none; } }
-.answers { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
 .answer-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 1.25rem 1.25rem 0.75rem; min-width: 0; }
-.answer-q { color: var(--muted); font-weight: 600; margin-bottom: 0.4rem; }
 .answer-text { font: 600 1.25rem/1.45 var(--display); color: var(--teal-ink); margin-bottom: 0.5rem; text-wrap: pretty; }
 .answer-note { color: var(--muted); font-size: 0.92rem; }
 .answer-card .table-wrap { margin-top: 0.75rem; }
@@ -410,3 +408,20 @@ td.src-cell { color: var(--muted); font-size: 0.85rem; white-space: normal; min-
 .answer-sql summary { cursor: pointer; color: var(--teal-ink); font-weight: 600; font-size: 0.9rem; }
 .answer-sql pre { background: var(--surface-2); border-radius: var(--r-sm); padding: 0.85rem 1rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; }
 .ask-fine { font-size: 0.85rem; margin-top: 2rem; max-width: var(--measure); }
+
+/* Ask: conversation */
+.ask-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.ask-new { border: 1px solid var(--line); background: var(--surface); color: var(--teal-ink); border-radius: 999px; padding: 0.45rem 1rem; font-weight: 600; cursor: pointer; }
+.ask-new:hover:not(:disabled) { border-color: var(--teal); }
+.thread { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+.turn { scroll-margin-top: 5rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.6rem; min-width: 0; }
+.turn-q { justify-self: end; max-width: min(85%, 36rem); background: var(--teal); color: #fff; padding: 0.6rem 1rem; border-radius: 1.1rem 1.1rem 0.3rem 1.1rem; font-weight: 500; overflow-wrap: anywhere; }
+.answer-readas { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.35rem; }
+.turn.pending .ask-stage { margin: 0; }
+.ask-dock { position: sticky; bottom: 0; padding: 0.9rem 0 1rem; margin-top: 0.5rem; background: linear-gradient(to bottom, transparent, var(--bg) 1.2rem); }
+.ask-examples.follow { margin: 0 0 0.6rem; }
+.chatting .ask-fine { margin-top: 0.5rem; }
+@media (max-width: 640px) {
+  .ask-examples.follow { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-right: -16px; padding-right: 16px; }
+  .ask-examples.follow button { flex: none; }
+}

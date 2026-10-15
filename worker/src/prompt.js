@@ -71,6 +71,9 @@ Rules:
   (most runs, wickets, hundreds, best average; overall or for a country) MUST come from careers.
   Use batting/bowling for seasons, years, venues, opponents or leagues.
 - "T20I" alone means men's ('t20i-m') unless women are mentioned; same for Tests and ODIs.
+- Follow-ups: when earlier questions are given, resolve references like "what about 2023?", "and in ODIs?", "him",
+  "the second one" or "only women" from them, and keep everything else (format, filters, columns) the same.
+  If the question is a new topic, ignore the earlier ones.
 - If the question is not about cricket data in these tables, or cannot be answered from them, set sql to null and explain why.
 `;
 
