@@ -46,8 +46,13 @@ export default function Header() {
       <a className="skip" href="#main">Skip to content</a>
       <div className="header-inner">
         <Link to="/" className="wordmark" onClick={close}>
-          <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="10" /><path d="M11 8.5c3.6 5 3.6 10 0 15M21 8.5c-3.6 5-3.6 10 0 15" /></svg>
-          CricStats
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <rect className="bar" x="8" y="34" width="11" height="24" rx="3" />
+            <rect className="bar" x="26.5" y="25" width="11" height="33" rx="3" />
+            <rect className="bar" x="45" y="18" width="11" height="40" rx="3" />
+            <circle className="ball" cx="50.5" cy="8" r="6.5" />
+          </svg>
+          <span className="wordmark-text">CricStats</span>
         </Link>
         <button className="menu-toggle" aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen(!open)}>
           {open ? 'Close' : 'Menu'}

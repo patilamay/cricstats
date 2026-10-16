@@ -95,11 +95,14 @@ button, input, select { font: inherit; color: inherit; }
 .site-header { position: sticky; top: 0; z-index: 30; background: var(--header); backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); border-bottom: 1px solid var(--line); }
 .header-inner { max-width: var(--page); margin: 0 auto; padding: 0.65rem 16px; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
 @media (min-width: 720px) { .header-inner { padding: 0.7rem 24px; } }
-.wordmark { display: inline-flex; align-items: center; gap: 0.55rem; font: 700 1.3rem/1 var(--display); color: var(--teal); text-decoration: none; letter-spacing: -0.02em; }
-.wordmark svg { width: 1.7rem; height: 1.7rem; }
-.wordmark circle { fill: var(--coral); }
-.wordmark path { fill: none; stroke: #fff; stroke-width: 1.4; stroke-dasharray: 1.5 1.3; }
-.wordmark:hover { color: var(--teal); }
+.wordmark { display: inline-flex; align-items: flex-end; gap: 0.6rem; text-decoration: none; color: var(--coral-ink); }
+.wordmark svg { width: 1.9rem; height: 1.9rem; flex: none; }
+.wordmark .bar { fill: var(--teal-ink); }
+.wordmark .ball { fill: var(--coral); }
+.wordmark-text { font: 800 1.08rem/1 var(--body); letter-spacing: 0.12em; text-transform: uppercase; padding-bottom: 0.1rem; }
+.wordmark:hover { color: var(--coral-ink); }
+@media (max-width: 719px) { .header-inner { column-gap: 0.6rem; } .wordmark { gap: 0.45rem; } .wordmark svg { width: 1.7rem; height: 1.7rem; } .wordmark-text { font-size: 1rem; letter-spacing: 0.1em; } }
+@media (max-width: 380px) { .wordmark-text { font-size: 0.92rem; letter-spacing: 0.07em; } }
 #site-nav { display: flex; gap: 0.25rem; }
 #site-nav a { color: var(--muted); text-decoration: none; font: 500 0.98rem/1 var(--body); padding: 0.55rem 0.85rem; border-radius: 999px; transition: background-color 0.2s ease, color 0.2s ease; }
 #site-nav a:hover { color: var(--ink); background: var(--surface-2); }
