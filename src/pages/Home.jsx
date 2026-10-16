@@ -5,12 +5,29 @@ import { useData } from '../data.js';
 import { date, num } from '../format.js';
 import { PlayerLink, ResultRow } from '../components/Bits.jsx';
 import PlayerSearch from '../components/PlayerSearch.jsx';
+import FactCard from '../components/FactCard.jsx';
 
 const PREF_KEY = 'cricstats.homeLeaders';
 const readPref = () => { try { return JSON.parse(localStorage.getItem(PREF_KEY)) || null; } catch { return null; } };
 const writePref = (v) => { try { localStorage.setItem(PREF_KEY, JSON.stringify(v)); } catch { /* storage unavailable */ } };
 
 const FORMATS = [['test', 'Tests'], ['odi', 'ODIs'], ['t20i', 'T20Is']];
+
+// One headline per day, the same for everyone that day.
+const HEADLINES = [
+  'Every ball, every innings, every record.',
+  'From Bradman to last night.',
+  'The numbers behind the game.',
+  'Ask anything about cricket.',
+  '150 years of cricket, one search away.',
+  "Who's the best? Let the numbers argue.",
+  'Stats that settle arguments.',
+  'Your cricket memory, with receipts.',
+  'Every run counted since 1877.',
+  'Cricket, by the numbers.',
+];
+const dayNumber = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
+const headline = () => HEADLINES[dayNumber() % HEADLINES.length];
 
 function LeaderList({ board }) {
   if (!board) return null;
@@ -55,11 +72,13 @@ export default function Home() {
     <div className="home">
       <section className="hero" aria-labelledby="hero-title">
         <div className="hero-inner">
-          <h1 id="hero-title">Cricket stats, from Bradman to last night</h1>
+          <p className="hero-eyebrow">CricStats</p>
+          <h1 id="hero-title">{headline()}</h1>
           <p className="hero-sub">
-            Careers, records and scorecards for {num(meta.totals.players)} players across international cricket and the big leagues. Updated every day.
+            Careers, records and scorecards for {num(meta.totals.players)} players, updated every day. Search a player or ask a question.
           </p>
           <div className="hero-search"><PlayerSearch placeholder="Search a player, or ask: most T20I runs in 2024?" /></div>
+          <FactCard />
           <nav className="hero-links" aria-label="Browse by format">
             <Link to="/stats/test-m">Tests</Link>
             <Link to="/stats/odi-m">ODIs</Link>
