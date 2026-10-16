@@ -100,10 +100,10 @@ const ANSWER_TOOL = {
   input_schema: {
     type: 'object',
     properties: {
-      answer: { type: 'string', description: 'One or two plain sentences answering the question from the result only. Lead with the direct answer and its key number. If the result is empty, say no matching records were found. No SQL or table talk, no facts beyond the result.' },
+      answer: { type: 'string', description: 'One or two plain sentences answering the question from the result only. Lead with the direct answer and its key number. If the result is empty, say no matching records were found. No SQL or table talk, no facts beyond the result. Write dates the way a person would (7 Sep 2017, or just the year when that is enough); never mention innings numbers, match ids or column names.' },
       followups: {
         type: 'array', minItems: 0, maxItems: 3, items: { type: 'string' },
-        description: 'Up to three short follow-up questions (2-7 words each) a cricket fan would naturally ask next, that this database can answer: international and league batting, bowling, careers, records, results, by year, format, team, venue or phase. Build on this answer, e.g. dig into the top name ("Waseem\'s best innings?"), compare the top two, switch format, gender, year or era, or flip batting/bowling. Each must make sense as a follow-up in this conversation. No questions about things outside the data (salaries, injuries, opinions, news). Vary them; never repeat the question just asked.',
+        description: 'Up to three short follow-up questions (2-7 words each) a cricket fan would naturally ask next, that this database can answer: international and league batting, bowling, careers, records, results, by year, format, team, venue or phase. Build on this answer, e.g. dig into the top name ("Waseem\'s highest T20I score?", or for a bowler "Anderson\'s best figures?"), compare the top two, switch format, gender, year or era, or flip batting/bowling. Each must make sense as a follow-up in this conversation. No questions about things outside the data (salaries, injuries, opinions, news). Vary them; never repeat the question just asked.',
       },
     },
     required: ['answer', 'followups'],
