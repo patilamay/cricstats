@@ -136,6 +136,7 @@ export default function Ask() {
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState('');
   const [stage, setStage] = useState(null);
+  const [pendingQ, setPendingQ] = useState(null);
   const [thread, setThread] = useState([]);
   const [convId, setConvId] = useState(null);
   const [convs, setConvs] = useState(null);
@@ -183,6 +184,7 @@ export default function Ask() {
     const baseId = fresh ? null : convId;
     if (fresh) { setThread([]); setConvId(null); setNotFound(false); }
     setQ('');
+    setPendingQ(text);
     setStage('Starting');
     let item;
     try {
@@ -192,6 +194,7 @@ export default function Ask() {
     }
     setThread([...base, item].slice(-100));
     setStage(null);
+    setPendingQ(null);
     if (signedIn) await persist(baseId, [item]);
   };
 
@@ -337,6 +340,7 @@ export default function Ask() {
             {thread.map((item, i) => <Turn key={i} item={item} followUp={i > 0} innerRef={!stage && i === thread.length - 1 ? lastRef : null} />)}
             {stage && (
               <li className="turn pending" ref={lastRef}>
+                {pendingQ && <p className="turn-q">{pendingQ}</p>}
                 <p className="ask-stage" role="status"><span className="dot" aria-hidden="true" />{stage}…{thread.length === 0 && stage !== 'Opening the conversation' && <span className="muted"> The first question loads the data engine, which takes a few seconds.</span>}</p>
               </li>
             )}
