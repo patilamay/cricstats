@@ -34,7 +34,8 @@ export async function ask(question, history = [], onStage = () => {}) {
   standalone = standalone || question;
   if (!sql) return { question, standalone, cannot: true, note: note || "That question can't be answered from this site's data." };
 
-  onStage('Crunching the numbers');
+  // Ball-by-ball questions scan millions of rows: show the long animation.
+  onStage('Crunching the numbers', { heavy: /\bdeliveries\b/i.test(sql) });
   let result;
   try {
     result = await runQuery(sql);
@@ -58,7 +59,7 @@ export async function ask(question, history = [], onStage = () => {}) {
 
 // Example questions run their known-good SQL locally; the answer sentence is added when the service is on.
 export async function runExample(example, onStage = () => {}) {
-  onStage('Crunching the numbers');
+  onStage('Crunching the numbers', { heavy: /\bdeliveries\b/i.test(example.sql) });
   const result = await runQuery(example.sql);
   let answer = null;
   let followups = [];
