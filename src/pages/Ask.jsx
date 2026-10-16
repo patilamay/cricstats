@@ -106,6 +106,7 @@ function ConversationItem({ c, active, onOpen, onRename, onDelete }) {
   );
 }
 
+// Used when the answer came without suggestions (e.g. a reopened saved conversation).
 const FOLLOW_UPS = ['And for women?', 'Only since 2020', 'Show the top 20'];
 
 export default function Ask() {
@@ -247,6 +248,9 @@ export default function Ask() {
   };
 
   const wantsSaved = params.get('c');
+  const last = thread[thread.length - 1];
+  const suggestions = ((last && last.followups && last.followups.length ? last.followups : FOLLOW_UPS))
+    .filter((f) => !thread.some((t) => same(t.question, f)));
   const form = (
     <form className="ask-form" onSubmit={submit} role="search">
       <label htmlFor="ask-input" className="visually-hidden">{started ? 'Ask a follow-up' : 'Your question'}</label>
@@ -325,7 +329,7 @@ export default function Ask() {
             )}
             {enabled && !stage && thread.length > 0 && !thread[thread.length - 1].error && (
               <div className="ask-examples follow" role="group" aria-label="Follow-up ideas">
-                {FOLLOW_UPS.filter((f) => !thread.some((t) => same(t.question, f))).map((f) => <button key={f} type="button" onClick={() => go(f)}>{f}</button>)}
+                {suggestions.map((f) => <button key={f} type="button" onClick={() => go(f)}>{f}</button>)}
               </div>
             )}
             {form}

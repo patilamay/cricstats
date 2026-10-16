@@ -62,11 +62,21 @@ test('unsafe SQL from the model is rejected', async () => {
   assert.equal(out.rejected, true);
 });
 
-test('/answer returns plain text from the model', async () => {
-  const calls = mockAnthropic(() => ({ content: [{ type: 'text', text: 'Muhammad Waseem scored the most, with 882 runs.' }] }));
+test('/answer returns the answer and tidied follow-up suggestions', async () => {
+  const calls = mockAnthropic(() => ({ content: [{ type: 'tool_use', name: 'give_answer', input: {
+    answer: 'Muhammad Waseem scored the most, with 882 runs.',
+    followups: ['Waseem\'s best innings?', 'q', '  Most T20I runs in 2023  ', 'most t20i runs in 2023', 'And for women?'],
+  } }] }));
   const res = await worker.fetch(req('/answer', { question: 'q', sql: 'SELECT 1', columns: ['player', 'runs'], rows: [['Muhammad Waseem', 882]] }), env());
-  assert.deepEqual(await res.json(), { answer: 'Muhammad Waseem scored the most, with 882 runs.' });
+  assert.deepEqual(await res.json(), { answer: 'Muhammad Waseem scored the most, with 882 runs.', followups: ["Waseem's best innings?", 'Most T20I runs in 2023', 'And for women?'] });
   assert.match(calls[0].body.messages[0].content, /Muhammad Waseem \| 882/);
+  assert.equal(calls[0].body.tool_choice.name, 'give_answer');
+});
+
+test('/answer still works if the model replies in plain text', async () => {
+  mockAnthropic(() => ({ content: [{ type: 'text', text: 'Plain answer.' }] }));
+  const res = await worker.fetch(req('/answer', { question: 'q', sql: 'SELECT 1', columns: ['x'], rows: [[1]] }), env());
+  assert.deepEqual(await res.json(), { answer: 'Plain answer.', followups: [] });
 });
 
 test('origin, method, key, length and rate limits are enforced', async () => {
