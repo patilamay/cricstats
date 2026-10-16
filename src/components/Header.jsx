@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import PlayerSearch from './PlayerSearch.jsx';
+import ThemeToggle from './ThemeToggle.jsx';
 import { useAuth } from '../auth.jsx';
 
 function Account() {
@@ -64,8 +65,10 @@ export default function Header() {
           <NavLink to="/players" onClick={close}>Players</NavLink>
           <NavLink to="/glossary" onClick={close}>Glossary</NavLink>
           <NavLink to="/about" onClick={close}>About</NavLink>
+          <ThemeToggle inline />
         </nav>
         {pathname !== '/' && pathname !== '/ask' && <PlayerSearch onPick={close} placeholder="Search or ask" />}
+        <ThemeToggle />
         <Account />
       </div>
     </header>

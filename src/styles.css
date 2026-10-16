@@ -54,6 +54,28 @@
   }
 }
 
+/* Chosen with the theme button: overrides the system setting either way. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f1a1e;
+  --surface: #152328;
+  --surface-2: #1a2b31;
+  --ink: #e4eef0;
+  --muted: #93a9ae;
+  --line: #243940;
+  --teal: #7cc3d4;
+  --teal-ink: #9ed6e3;
+  --teal-soft: #1b343b;
+  --teal-bar: #21414a;
+  --coral: #ff7a7c;
+  --coral-ink: #ff9496;
+  --coral-soft: #3a2224;
+  --mist-a: #152328;
+  --mist-b: #1b3038;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.25);
+  --header: rgb(15 26 30 / 0.82);
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -277,6 +299,7 @@ table.compact { font-size: 0.92rem; }
 .player-chips { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.25rem; padding: 0; list-style: none; }
 .player-chips li { background: rgb(255 255 255 / 0.7); border-radius: var(--r-md); padding: 0.7rem 1.1rem; min-width: 7.5rem; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .player-chips li { background: rgb(255 255 255 / 0.06); } }
+:root[data-theme="dark"] .player-chips li { background: rgb(255 255 255 / 0.06); }
 .chip-val { display: block; font: 600 1.45rem/1.1 var(--display); color: var(--teal-ink); }
 .chip-label { font-size: 0.82rem; color: var(--muted); }
 .player-section { margin-bottom: 2.25rem; }
@@ -348,6 +371,7 @@ td.src-cell { color: var(--muted); font-size: 0.85rem; white-space: normal; min-
 .hero-links a { font-weight: 600; font-size: 0.93rem; color: var(--teal-ink); text-decoration: none; padding: 0.45rem 0.95rem; border-radius: 999px; background: rgb(255 255 255 / 0.6); border: 1px solid rgb(37 90 107 / 0.1); }
 .hero-links a:hover { background: var(--surface); color: var(--coral-ink); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hero-links a { background: rgb(255 255 255 / 0.05); border-color: var(--line); } }
+:root[data-theme="dark"] .hero-links a { background: rgb(255 255 255 / 0.05); border-color: var(--line); }
 
 .home-body { padding-top: 2.5rem; }
 .leaders-card { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 1.4rem 1.1rem 1rem; margin-bottom: 3rem; }
@@ -632,3 +656,30 @@ h1 .flag, h2 .flag { width: 1em; height: 0.75em; vertical-align: 0.02em; }
 .player-id { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.6rem; }
 .player-id h1 { margin: 0; }
 .player-id .player-teams { margin: 0.25rem 0 0; }
+
+/* Theme button -------------------------------------------------------- */
+.theme-toggle { position: relative; flex: none; }
+.theme-btn { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; transition: border-color 0.2s ease, color 0.2s ease; }
+.theme-btn:hover, .theme-btn:focus-visible { border-color: var(--coral); color: var(--coral-ink); }
+.theme-btn:focus-visible { outline: 2px solid color-mix(in srgb, var(--coral) 45%, transparent); outline-offset: 2px; }
+.theme-toggle svg { width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.theme-menu { position: absolute; right: 0; top: calc(100% + 0.4rem); z-index: 40; list-style: none; margin: 0; padding: 0.3rem; min-width: 9.5rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); box-shadow: var(--shadow); }
+.theme-menu button { display: flex; align-items: center; gap: 0.6rem; width: 100%; padding: 0.55rem 0.7rem; border: 0; border-radius: 7px; background: none; color: var(--ink); font: 500 0.95rem/1 var(--body); text-align: left; cursor: pointer; }
+.theme-menu button:hover, .theme-menu button:focus-visible { background: var(--surface-2); outline: none; }
+.theme-menu button[aria-checked="true"] { font-weight: 600; }
+.theme-tick { margin-left: auto; color: var(--coral-ink); }
+@media (min-width: 720px) {
+  .site-header nav + .theme-toggle { margin-left: auto; }
+  .site-header .player-search + .theme-toggle { margin-left: -0.75rem; }
+  .site-header .theme-toggle + .account { margin-left: -0.75rem; }
+}
+@media (max-width: 719px) { .theme-toggle { order: 1; } .site-header .theme-toggle + .account { margin-left: 0; } }
+.theme-inline { display: none; }
+@media (max-width: 800px) {
+  .site-header .theme-toggle { display: none; }
+  .theme-inline { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; padding: 0.75rem 0.9rem 0.25rem; margin-top: 0.35rem; border-top: 1px solid var(--line); }
+  .theme-inline-label { color: var(--muted); font-size: 0.85rem; flex-basis: 100%; margin-bottom: 0.15rem; }
+  .theme-inline button { flex: 1; justify-content: center; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.75rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font: 500 0.88rem/1 var(--body); cursor: pointer; }
+  .theme-inline button[aria-checked="true"] { border-color: var(--coral); color: var(--coral-ink); font-weight: 600; }
+  .theme-inline svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+}
