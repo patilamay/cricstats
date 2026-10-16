@@ -38,10 +38,16 @@ function Account() {
   );
 }
 
+const SECTIONS = [['/ask', 'Ask'], ['/results', 'Results'], ['/stats', 'Stats'], ['/players', 'Players'], ['/player', 'Players'], ['/match', 'Results'], ['/glossary', 'Glossary'], ['/about', 'About'], ['/privacy', 'Privacy']];
+
 export default function Header() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   const close = () => setOpen(false);
+  // On phones the menu button names the section you're in, so you always know where you are.
+  const section = SECTIONS.find(([path]) => pathname === path || pathname.startsWith(`${path}/`))?.[1] || null;
+  // Close the menu whenever the page changes (links, back button, search results).
+  useEffect(() => { setOpen(false); }, [pathname]);
   return (
     <header className="site-header">
       <a className="skip" href="#main">Skip to content</a>
@@ -56,7 +62,9 @@ export default function Header() {
           <span className="wordmark-text">CricStats</span>
         </Link>
         <button className="menu-toggle" aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen(!open)}>
-          {open ? 'Close' : 'Menu'}
+          <svg viewBox="0 0 20 20" aria-hidden="true">{open ? <path d="M5 5l10 10M15 5L5 15" /> : <path d="M3.5 6h13M3.5 10h13M3.5 14h13" />}</svg>
+          <span>{open ? 'Close' : section || 'Menu'}</span>
+          {!open && section && <span className="visually-hidden">: open menu</span>}
         </button>
         <nav id="site-nav" className={open ? 'open' : ''} aria-label="Main">
           <NavLink to="/ask" onClick={close}>Ask</NavLink>
