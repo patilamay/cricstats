@@ -4,6 +4,8 @@ import { ask, askEnabled, historyFrom, runExample } from '../ask/client.js';
 import { deleteConversation, listConversations, loadConversation, renameConversation, saveTurns } from '../ask/store.js';
 import { PENDING_KEY, useAuth } from '../auth.jsx';
 import { EXAMPLES } from '../../worker/src/prompt.js';
+import { engineReady } from '../ask/engine.js';
+import PitchLoader from '../components/PitchLoader.jsx';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})/;
@@ -137,6 +139,7 @@ export default function Ask() {
   const [q, setQ] = useState('');
   const [stage, setStage] = useState(null);
   const [pendingQ, setPendingQ] = useState(null);
+  const [longInnings, setLongInnings] = useState(false);
   const [thread, setThread] = useState([]);
   const [convId, setConvId] = useState(null);
   const [convs, setConvs] = useState(null);
@@ -177,6 +180,18 @@ export default function Ask() {
     }
   };
 
+  const onStage = (name, meta) => {
+    setStage(name);
+    if (meta && meta.heavy) setLongInnings(true);
+  };
+
+  // Anything still running after 5 seconds switches to the long animation.
+  useEffect(() => {
+    if (!stage || longInnings) return undefined;
+    const t = setTimeout(() => setLongInnings(true), 5000);
+    return () => clearTimeout(t);
+  }, [stage, longInnings]);
+
   const go = async (question, example, fresh = false) => {
     const text = (example ? example.q : question).trim();
     if (!text || stage) return;
@@ -185,10 +200,12 @@ export default function Ask() {
     if (fresh) { setThread([]); setConvId(null); setNotFound(false); }
     setQ('');
     setPendingQ(text);
-    setStage('Starting');
+    // First question of a visit loads the data engine: that's a long innings.
+    setLongInnings(!engineReady());
+    setStage('Working out the query');
     let item;
     try {
-      item = example ? await runExample(example, setStage) : await ask(text, historyFrom(base), setStage);
+      item = example ? await runExample(example, onStage) : await ask(text, historyFrom(base), onStage);
     } catch (err) {
       item = { question: text, error: err.message || 'Something went wrong. Try again.' };
     }
@@ -341,7 +358,7 @@ export default function Ask() {
             {stage && (
               <li className="turn pending" ref={lastRef}>
                 {pendingQ && <p className="turn-q">{pendingQ}</p>}
-                <p className="ask-stage" role="status"><span className="dot" aria-hidden="true" />{stage}…{thread.length === 0 && stage !== 'Opening the conversation' && <span className="muted"> The first question loads the data engine, which takes a few seconds.</span>}</p>
+                <PitchLoader stage={stage} mode={longInnings ? 'long' : 'quick'} note={thread.length === 0 && !engineReady() && stage !== 'Opening the conversation' ? 'The first question loads the data engine, which takes a few seconds.' : null} />
               </li>
             )}
           </ol>

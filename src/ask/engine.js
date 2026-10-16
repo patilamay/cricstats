@@ -12,6 +12,9 @@ export const TABLES = ['competitions', 'matches', 'innings', 'deliveries', 'batt
 const FORMAT = import.meta.env.VITE_DB_FORMAT === 'csv' ? 'csv' : 'parquet';
 
 let connPromise = null;
+let ready = false;
+// True once the data engine has loaded (later questions are quicker).
+export const engineReady = () => ready;
 
 // The Parquet reader is a DuckDB extension. The deploy copies it onto this site (duckdb-ext/);
 // if that copy is missing, DuckDB fetches it from extensions.duckdb.org instead.
@@ -45,6 +48,7 @@ export function getConnection() {
       if (FORMAT === 'parquet') await loadParquet(conn, site);
       const read = FORMAT === 'csv' ? 'read_csv_auto' : 'read_parquet';
       for (const t of TABLES) await conn.query(`CREATE VIEW ${t} AS SELECT * FROM ${read}('${site}db/${t}.${FORMAT}')`);
+      ready = true;
       return conn;
     })();
     connPromise.catch(() => { connPromise = null; });
