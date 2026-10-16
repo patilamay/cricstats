@@ -19,6 +19,8 @@ Changes that don't touch the data pipeline skip steps 1–5: the site is rebuilt
 
 The Ask page (`/ask`, also reached from the search box) answers questions like "Who scored the most T20I runs in 2024?". A small Cloudflare Worker (`worker/`) has Claude turn the question into SQL, and the query runs in the visitor's browser with DuckDB-WASM over the site's Parquet files. It's a conversation: follow-ups like "what about 2023?" use the last few questions as context. Setup and limits are in [worker/README.md](worker/README.md); changes to `worker/` deploy to Cloudflare automatically on merge.
 
+Visitors can sign in with Google (Supabase) to save their conversations; guests can still ask everything. Setup and the database rules are in [supabase/README.md](supabase/README.md).
+
 ## Download the database
 
 Every day the full dataset is published as the [`data` release](https://github.com/patilamay/cricstats/releases/tag/data):

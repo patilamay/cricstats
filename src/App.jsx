@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { useData } from './data.js';
 import Header from './components/Header.jsx';
+import { AuthProvider } from './auth.jsx';
 import Footer from './components/Footer.jsx';
 import Home from './pages/Home.jsx';
 import Stats from './pages/Stats.jsx';
@@ -15,6 +16,7 @@ import NotFound from './pages/NotFound.jsx';
 import { lazy, Suspense } from 'react';
 
 const Ask = lazy(() => import('./pages/Ask.jsx'));
+const Privacy = lazy(() => import('./pages/Privacy.jsx'));
 
 const MetaContext = createContext(null);
 export const useMeta = () => useContext(MetaContext);
@@ -33,6 +35,7 @@ export default function App() {
   const { data: meta, error } = useData('meta.json');
 
   return (
+    <AuthProvider>
     <MetaContext.Provider value={meta}>
       <ScrollToTop />
       <Header />
@@ -53,6 +56,7 @@ export default function App() {
             <Route path="/results" element={<Results />} />
             <Route path="/match/:id" element={<Match />} />
             <Route path="/ask" element={<Suspense fallback={<div className="page"><p className="loading">Loading…</p></div>}><Ask /></Suspense>} />
+            <Route path="/privacy" element={<Suspense fallback={<div className="page"><p className="loading">Loading…</p></div>}><Privacy /></Suspense>} />
             <Route path="/glossary" element={<Glossary />} />
             <Route path="/about" element={<About />} />
             <Route path="*" element={<NotFound />} />
@@ -61,5 +65,6 @@ export default function App() {
       </main>
       <Footer />
     </MetaContext.Provider>
+    </AuthProvider>
   );
 }

@@ -425,3 +425,66 @@ td.src-cell { color: var(--muted); font-size: 0.85rem; white-space: normal; min-
   .ask-examples.follow { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-right: -16px; padding-right: 16px; }
   .ask-examples.follow button { flex: none; }
 }
+
+/* Accounts: header */
+.account { position: relative; display: flex; align-items: center; }
+.account.placeholder { width: 2.25rem; height: 2.25rem; }
+.account.signin { border: 1px solid var(--line); background: var(--surface); color: var(--teal-ink); border-radius: 999px; padding: 0.45rem 1rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.account.signin:hover { border-color: var(--teal); }
+.avatar-btn { width: 2.25rem; height: 2.25rem; border-radius: 50%; border: 2px solid var(--teal-soft); padding: 0; overflow: hidden; background: var(--teal); color: #fff; font-weight: 700; cursor: pointer; display: grid; place-items: center; }
+.avatar-btn img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-btn:hover, .avatar-btn[aria-expanded="true"] { border-color: var(--teal); }
+.account-menu { position: absolute; right: 0; top: calc(100% + 0.5rem); min-width: 15rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow); padding: 0.4rem; z-index: 40; display: grid; }
+.account-who { padding: 0.55rem 0.7rem 0.6rem; border-bottom: 1px solid var(--line); margin-bottom: 0.3rem; display: grid; gap: 0.1rem; font-size: 0.92rem; }
+.account-who span { color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
+.account-menu a, .account-menu button { text-align: left; background: none; border: 0; padding: 0.55rem 0.7rem; border-radius: var(--r-sm); color: var(--ink); text-decoration: none; font: inherit; font-size: 0.95rem; cursor: pointer; }
+.account-menu a:hover, .account-menu button:hover { background: var(--surface-2); }
+@media (max-width: 719px) { .account { order: 1; } .menu-toggle { margin-left: auto; } .account { margin-left: 0.5rem; } }
+@media (min-width: 720px) { .site-header .account { margin-left: 0.25rem; } .site-header .player-search + .account { margin-left: 0.5rem; } .site-header nav + .account { margin-left: auto; } }
+
+/* Shared small buttons */
+.linkish { background: none; border: 0; padding: 0; color: var(--teal-ink); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; cursor: pointer; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 0.5rem 1.1rem; font-weight: 600; cursor: pointer; }
+.btn:hover { border-color: var(--teal); }
+.btn.danger, .conv-actions .danger { background: var(--coral); border-color: var(--coral); color: #fff; }
+.confirm-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+
+/* Ask: saved conversations */
+.ask-page.with-side { max-width: calc(920px + 18rem); display: grid; grid-template-columns: 16rem minmax(0, 1fr); gap: 2rem; align-items: start; }
+.ask-main { min-width: 0; }
+.ask-head-tools { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.ask-side { position: sticky; top: 5rem; max-height: calc(100vh - 6rem); overflow-y: auto; padding: 0.25rem 0.25rem 1rem; }
+.ask-side-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+.ask-side h2 { font-size: 1rem; color: var(--teal-ink); margin: 0; }
+.ask-side-close, .ask-side-toggle { display: none; }
+.ask-new.wide { width: 100%; margin-bottom: 0.75rem; text-align: center; }
+.conv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.15rem; }
+.conv { position: relative; display: flex; align-items: center; border-radius: var(--r-sm); }
+.conv:hover, .conv.active { background: var(--surface); }
+.conv.active { box-shadow: inset 3px 0 0 var(--teal); }
+.conv-open { flex: 1; min-width: 0; text-align: left; background: none; border: 0; padding: 0.55rem 0.6rem; cursor: pointer; display: grid; gap: 0.1rem; color: var(--ink); font: inherit; }
+.conv-title { font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conv-when { font-size: 0.78rem; color: var(--muted); }
+.conv-tools { display: flex; opacity: 0; transition: opacity 0.15s; }
+.conv:hover .conv-tools, .conv:focus-within .conv-tools, .conv.active .conv-tools { opacity: 1; }
+.conv-tools button { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0.35rem 0.4rem; border-radius: var(--r-sm); font-size: 0.85rem; }
+.conv-tools button:hover { color: var(--ink); background: var(--surface-2); }
+.conv.editing { display: block; padding: 0.5rem; background: var(--surface); font-size: 0.9rem; }
+.conv.editing input { width: 100%; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 0.4rem 0.5rem; font: inherit; }
+.conv-actions { display: flex; gap: 0.4rem; margin-top: 0.45rem; }
+.conv-actions button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 0.3rem 0.8rem; font-size: 0.85rem; cursor: pointer; }
+.ask-save-note { font-size: 0.9rem; color: var(--muted); margin: 0 0 0.6rem; }
+.ask-save-note.error { color: var(--coral-ink); }
+.ask-scrim { display: none; }
+.small { font-size: 0.88rem; }
+@media (min-width: 900px) { .with-side .ask-head-tools .ask-new:not(.ask-side-toggle) { display: none; } }
+@media (max-width: 899px) {
+  .ask-page.with-side { display: block; }
+  .ask-side-toggle { display: inline-block; }
+  .ask-side { position: fixed; z-index: 50; top: 0; bottom: 0; left: 0; width: min(20rem, 86vw); max-height: none; background: var(--bg); padding: 1rem; box-shadow: var(--shadow); transform: translateX(-105%); transition: transform 0.2s ease; }
+  .ask-side.open { transform: none; }
+  .ask-side-close { display: inline-block; background: none; border: 0; font-size: 1rem; padding: 0.4rem; cursor: pointer; color: var(--muted); }
+  .ask-scrim { display: block; position: fixed; inset: 0; z-index: 45; background: rgba(10, 25, 30, 0.35); border: 0; }
+  .conv-tools { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .ask-side { transition: none; } }

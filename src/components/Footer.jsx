@@ -15,7 +15,7 @@ export default function Footer() {
         {meta && (
           <p>
             Includes matches up to {date(meta.latestMatch)}. Data refreshed {date(meta.updatedAt.slice(0, 10))}.{' '}
-            <Link to="/about">How the numbers are counted</Link>
+            <Link to="/about">How the numbers are counted</Link> · <Link to="/privacy">Privacy</Link>
           </p>
         )}
       </div>
