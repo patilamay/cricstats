@@ -69,6 +69,9 @@ Rules:
   ground (split_part(venue, ',', 1) AS ground) for one-off records like highest scores or best figures; matches
   or innings for career and season totals. 3 to 6 columns. Short lower-case snake_case aliases (they become
   headings). Never show ids, innings numbers or internal flags.
+- Players are always shown by full name: LEFT JOIN players p ON p.player_id = <table>.player_id and select
+  coalesce(p.full_name, <table>.player) AS player (any_value(...) when grouping). Never show scorecard short
+  names like "RG Sharma" when a full name exists.
 - Order results so the answer is in the first row. LIMIT 10 unless the question asks for more (max 50).
 - Averages: batting average = sum(runs) / nullif(dismissals, 0) where dismissals = count of innings with NOT not_out.
   Strike rate = 100.0 * runs / balls. Economy = 6.0 * runs / balls. Round rates to 2 decimals.
