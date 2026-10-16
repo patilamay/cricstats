@@ -10,6 +10,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { parseInfobox } from './infobox.js';
 
 export const UA = 'CricStatsBot/1.0 (https://github.com/patilamay/cricstats; data refresh for a cricket stats site) node/22';
@@ -50,9 +51,10 @@ export async function getJson(url, init = {}, tries = 6) {
 }
 
 async function cricinfoTitles() {
-  const query = `SELECT ?cid ?title WHERE {
+  const query = `SELECT ?cid ?title ?image WHERE {
     ?item wdt:P2697 ?cid .
     ?article schema:about ?item ; schema:isPartOf <https://en.wikipedia.org/> ; schema:name ?title .
+    OPTIONAL { ?item wdt:P18 ?image }
   }`;
   const json = await getJson(SPARQL, {
     method: 'POST',
@@ -60,14 +62,17 @@ async function cricinfoTitles() {
     body: `query=${encodeURIComponent(query)}`,
   });
   const byTitle = new Map(); // title -> Set(cid)
+  const images = new Map(); // title -> Commons file name (Wikidata's "image", P18)
   for (const b of json.results.bindings) {
     const cid = String(b.cid.value).trim();
     if (!/^\d+$/.test(cid)) continue;
     const title = b.title.value;
     if (!byTitle.has(title)) byTitle.set(title, new Set());
     byTitle.get(title).add(cid);
+    const file = b.image && commonsFileName(b.image.value);
+    if (file && !images.has(title)) images.set(title, file);
   }
-  return byTitle;
+  return { byTitle, images };
 }
 
 export async function inPool(items, worker, concurrency = CONCURRENCY) {
@@ -150,7 +155,7 @@ export async function fetchWikiCareers({ cacheDir }) {
   } catch { /* no cache yet */ }
 
   log('querying Wikidata for cricketers with an ESPNcricinfo ID');
-  const byTitle = await cricinfoTitles();
+  const { byTitle, images } = await cricinfoTitles();
   const titles = [...byTitle.keys()];
   log(`${titles.length} English Wikipedia articles`);
 
@@ -172,7 +177,7 @@ export async function fetchWikiCareers({ cacheDir }) {
     if (entry.d.rejected) rejected.push(`${final} — ${entry.d.rejected.join('; ')}`);
     if (!entry.d.formats) continue;
     for (const cid of byTitle.get(asked)) {
-      if (!result.has(cid)) result.set(cid, { title: final, ...entry.d });
+      if (!result.has(cid)) result.set(cid, { title: final, img: images.get(asked) || null, ...entry.d });
     }
   }
 
@@ -184,6 +189,76 @@ export async function fetchWikiCareers({ cacheDir }) {
   log(`${result.size} players with international career stats in ${Math.round((Date.now() - started) / 1000)}s; ${rejected.length} infobox columns failed sanity checks`);
   result.rejected = [...new Set(rejected)];
   return result;
+}
+
+// ---- Player photos (Wikimedia Commons) ----------------------------------------------------------
+// Wikidata gives each player's "image" as http://commons.wikimedia.org/wiki/Special:FilePath/<name>.
+// Only ordinary photo formats are used. The site shows a small thumbnail and credits the photographer
+// and licence on the player's page, as Commons licences require.
+
+const PHOTO_EXT = /\.(jpe?g|png|webp|gif)$/i;
+const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
+const CREDITS_VERSION = 1;
+
+export function commonsFileName(url) {
+  const m = /Special:FilePath\/(.+)$/.exec(String(url || ''));
+  if (!m) return null;
+  let name;
+  try { name = decodeURIComponent(m[1]); } catch { return null; }
+  name = name.replace(/ /g, '_');
+  return PHOTO_EXT.test(name) ? name : null;
+}
+
+// Where Commons stores a file: "a/ab/File_name.jpg" (first one and two hex digits of the name's MD5).
+// The site stores "ab/File_name.jpg"; the first directory is the first character of the second.
+export function commonsPath(file) {
+  const md5 = crypto.createHash('md5').update(file).digest('hex');
+  return `${md5.slice(0, 2)}/${file}`;
+}
+
+const stripHtml = (html) => String(html || '')
+  .replace(/<[^>]*>/g, ' ')
+  .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ')
+  .replace(/\s+/g, ' ').trim();
+
+// Author and licence for each file, cached between runs (they rarely change).
+// Returns Map(file -> { a: author, l: licence }). Files without a licence are left out.
+export async function photoCredits(files, { cacheDir }) {
+  const cacheFile = path.join(cacheDir, 'photo-credits.json');
+  let cache = {};
+  try {
+    const c = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+    if (c.v === CREDITS_VERSION) cache = c.files || {};
+  } catch { /* no cache yet */ }
+  const wanted = [...new Set(files)];
+  const missing = wanted.filter((f) => !(f in cache));
+  log(`photo credits: ${wanted.length} files, ${missing.length} to look up`);
+  let failed = 0;
+  await inPool(chunks(missing, 50), async (batch) => {
+    const asked = batch.map((f) => `File:${f.replace(/_/g, ' ')}`);
+    const params = new URLSearchParams({
+      action: 'query', format: 'json', formatversion: '2', prop: 'imageinfo', iiprop: 'extmetadata',
+      iiextmetadatafilter: 'Artist|LicenseShortName', titles: asked.join('|'), maxlag: '5',
+    });
+    let json;
+    try { json = await getJson(`${COMMONS_API}?${params}`); } catch (err) { failed += 1; log(`photo credits batch failed: ${err.message}`); return; }
+    const q = json.query || {};
+    const finals = finalTitleMap(q, asked);
+    const byTitle = new Map((q.pages || []).map((pg) => [pg.title, pg]));
+    batch.forEach((f, i) => {
+      const pg = byTitle.get(finals.get(asked[i]));
+      const md = pg && pg.imageinfo && pg.imageinfo[0] && pg.imageinfo[0].extmetadata;
+      const l = md && md.LicenseShortName ? stripHtml(md.LicenseShortName.value).slice(0, 60) : '';
+      const a = md && md.Artist ? stripHtml(md.Artist.value).slice(0, 120) : '';
+      cache[f] = l ? { a, l } : null;
+    });
+  });
+  fs.mkdirSync(cacheDir, { recursive: true });
+  const live = new Set(wanted);
+  fs.writeFileSync(cacheFile, JSON.stringify({ v: CREDITS_VERSION, files: Object.fromEntries(Object.entries(cache).filter(([f]) => live.has(f))) }));
+  const out = new Map();
+  for (const f of wanted) if (cache[f]) out.set(f, cache[f]);
+  return out;
 }
 
 // Cricsheet's player register: cricsheet id <-> ESPNcricinfo id.

@@ -2,6 +2,8 @@ import { Link, useParams } from 'react-router-dom';
 import { useMeta } from '../App.jsx';
 import { playerShard, useData } from '../data.js';
 import { date, dec, num, overs } from '../format.js';
+import { Teams } from '../components/Bits.jsx';
+import Avatar, { commonsPage } from '../components/Avatar.jsx';
 
 export default function Player() {
   const { id } = useParams();
@@ -35,8 +37,13 @@ export default function Player() {
   return (
     <div className="page player-page">
       <header className="player-head">
-        <h1>{p.fn || p.n}</h1>
-        <p className="player-teams">{teams.join(', ')}</p>
+        <div className="player-id">
+          <Avatar photo={p.photo && p.photo.f} name={p.fn || p.n} size="lg" />
+          <div>
+            <h1>{p.fn || p.n}</h1>
+            <p className="player-teams"><Teams list={teams} /></p>
+          </div>
+        </div>
         <p className="muted">{num(matches)} matches in the competitions this site covers</p>
         <ul className="player-chips">
           <li><span className="chip-val">{num(matches)}</span><span className="chip-label">Matches</span></li>
@@ -44,6 +51,11 @@ export default function Player() {
           {totalWkts > 0 && <li><span className="chip-val">{num(totalWkts)}</span><span className="chip-label">Wickets</span></li>}
           {totalCt > 0 && <li><span className="chip-val">{num(totalCt)}</span><span className="chip-label">Catches</span></li>}
         </ul>
+        {p.photo && (
+          <p className="photo-credit">
+            Photo: <a href={commonsPage(p.photo.f)} target="_blank" rel="noopener noreferrer">{p.photo.a || 'Wikimedia Commons'}</a>, {p.photo.l}, via Wikimedia Commons
+          </p>
+        )}
       </header>
 
       {careerComps.length > 0 && (
