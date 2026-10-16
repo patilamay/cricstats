@@ -49,10 +49,11 @@ export async function ask(question, history = [], onStage = () => {}) {
 
   onStage('Writing the answer');
   let answer = null;
+  let followups = [];
   try {
-    ({ answer } = await post('/answer', { question: standalone, sql, columns: result.columns, rows: result.rows.slice(0, 20) }));
+    ({ answer, followups = [] } = await post('/answer', { question: standalone, sql, columns: result.columns, rows: result.rows.slice(0, 20) }));
   } catch { /* the table still answers the question */ }
-  return { question, standalone, sql, note, answer, ...result };
+  return { question, standalone, sql, note, answer, followups, ...result };
 }
 
 // Example questions run their known-good SQL locally; the answer sentence is added when the service is on.
@@ -60,11 +61,12 @@ export async function runExample(example, onStage = () => {}) {
   onStage('Crunching the numbers');
   const result = await runQuery(example.sql);
   let answer = null;
+  let followups = [];
   if (askEnabled()) {
     onStage('Writing the answer');
     try {
-      ({ answer } = await post('/answer', { question: example.q, sql: example.sql, columns: result.columns, rows: result.rows.slice(0, 20) }));
+      ({ answer, followups = [] } = await post('/answer', { question: example.q, sql: example.sql, columns: result.columns, rows: result.rows.slice(0, 20) }));
     } catch { /* keep the table */ }
   }
-  return { question: example.q, standalone: example.q, sql: example.sql, note: null, answer, ...result };
+  return { question: example.q, standalone: example.q, sql: example.sql, note: null, answer, followups, ...result };
 }

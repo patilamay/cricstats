@@ -2,7 +2,7 @@
 //
 //   POST /sql     { question, history?, previousSql?, error? } -> { sql, note, standalone }
 //                 history: up to 4 earlier turns [{ question, sql, result }] so follow-ups work
-//   POST /answer  { question, sql, columns, rows }           -> { answer }
+//   POST /answer  { question, sql, columns, rows }           -> { answer, followups }
 //
 // Holds the Anthropic API key (secret ANTHROPIC_API_KEY), limits requests per visitor, and only
 // accepts requests from the site's origins. The SQL it returns runs in the visitor's browser
@@ -94,15 +94,42 @@ export async function writeSql(env, { question, previousSql, error, history = []
   return { sql, note: call.input.note || '', standalone, rejected: !!call.input.sql && !sql };
 }
 
+const ANSWER_TOOL = {
+  name: 'give_answer',
+  description: 'The answer sentence and three follow-up questions.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      answer: { type: 'string', description: 'One or two plain sentences answering the question from the result only. Lead with the direct answer and its key number. If the result is empty, say no matching records were found. No SQL or table talk, no facts beyond the result.' },
+      followups: {
+        type: 'array', minItems: 0, maxItems: 3, items: { type: 'string' },
+        description: 'Up to three short follow-up questions (2-7 words each) a cricket fan would naturally ask next, that this database can answer: international and league batting, bowling, careers, records, results, by year, format, team, venue or phase. Build on this answer, e.g. dig into the top name ("Waseem\'s best innings?"), compare the top two, switch format, gender, year or era, or flip batting/bowling. Each must make sense as a follow-up in this conversation. No questions about things outside the data (salaries, injuries, opinions, news). Vary them; never repeat the question just asked.',
+      },
+    },
+    required: ['answer', 'followups'],
+  },
+};
+
+const tidyFollowups = (list, question) => (Array.isArray(list) ? list : [])
+  .map((f) => String(f || '').replace(/\s+/g, ' ').trim().slice(0, 80))
+  .filter((f) => f && f.toLowerCase() !== String(question).toLowerCase())
+  .filter((f, i, a) => a.findIndex((g) => g.toLowerCase() === f.toLowerCase()) === i)
+  .slice(0, 3);
+
 export async function writeAnswer(env, { question, sql, columns, rows }) {
   const table = [columns.join(' | '), ...rows.slice(0, 20).map((r) => r.map((v) => (v == null ? '' : String(v))).join(' | '))].join('\n');
   const out = await claude(env, {
-    max_tokens: 300,
-    system: 'You answer cricket statistics questions in one or two plain sentences, using only the query result given. Lead with the direct answer and its key number. If the result is empty, say no matching records were found. Do not mention SQL or tables. Do not add facts that are not in the result.',
+    max_tokens: 400,
+    system: 'You answer cricket statistics questions from a database query result, and suggest what to ask next.',
+    tools: [ANSWER_TOOL],
+    tool_choice: { type: 'tool', name: 'give_answer' },
     messages: [{ role: 'user', content: `Question: ${question}\n\nQuery:\n${sql}\n\nResult (first rows):\n${table || '(no rows)'}` }],
   });
+  const call = (out.content || []).find((c) => c.type === 'tool_use');
+  if (call) return { answer: String(call.input.answer || '').trim(), followups: tidyFollowups(call.input.followups, question) };
+  // Fallback if the model answered in plain text.
   const text = (out.content || []).filter((c) => c.type === 'text').map((c) => c.text).join(' ').trim();
-  return { answer: text };
+  return { answer: text, followups: [] };
 }
 
 export default {
