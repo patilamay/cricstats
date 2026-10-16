@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useData } from '../data.js';
 import { date, dec } from '../format.js';
-import { CompLabel, PlayerLink } from '../components/Bits.jsx';
+import { CompLabel, PlayerLink, Team } from '../components/Bits.jsx';
 
 const cricinfo = (id) => `https://www.espncricinfo.com/ci/engine/match/${id}.html`;
 
@@ -85,7 +85,7 @@ function HistoryMatch({ m }) {
       {m.full ? m.full.map((inn, k) => (
         <section className="innings" key={k}>
           <div className="innings-head">
-            <h2>{inn.team}</h2>
+            <h2><Team name={inn.team} /></h2>
             <p className="innings-total"><strong>{inn.total}{inn.wkts != null && inn.wkts < 10 ? `/${inn.wkts}` : ''}{inn.declared ? 'd' : ''}</strong> {inn.overs && <span className="muted">({inn.overs} ov)</span>}</p>
           </div>
           <div className="table-wrap">
@@ -113,7 +113,7 @@ function HistoryMatch({ m }) {
           {m.innings.map((inn, k) => (
             <div className="summary-inn" key={k}>
               <div className="summary-total">
-                <span className="summary-team">{inn.team}</span>
+                <span className="summary-team"><Team name={inn.team} /></span>
                 <span className="summary-score">{inn.total}{inn.overs ? <span className="muted"> ({inn.overs} ov)</span> : null}</span>
               </div>
               <div className="summary-perf">

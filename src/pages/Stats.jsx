@@ -5,7 +5,7 @@ import { useData } from '../data.js';
 import { date, dec, num, overs } from '../format.js';
 import DataTable from '../components/DataTable.jsx';
 import CompPicker from '../components/CompPicker.jsx';
-import { PlayerLink, ResultList } from '../components/Bits.jsx';
+import { PlayerLink, ResultList, Team, Teams as TeamList } from '../components/Bits.jsx';
 
 const TABS = [
   ['batting', 'Batting'],
@@ -18,7 +18,7 @@ const TABS = [
 ];
 
 const nameCol = { key: 'name', label: 'Player', text: true, get: (r) => r.n, render: (r) => <PlayerLink id={r.id} name={r.n} /> };
-const teamCol = { key: 'team', label: 'Team', text: true, get: (r) => r.t.join(', '), render: (r) => <span className="team-cell">{r.t.join(', ')}</span> };
+const teamCol = { key: 'team', label: 'Team', text: true, get: (r) => r.t.join(', '), render: (r) => <span className="team-cell"><TeamList list={r.t} /></span> };
 const matchesCol = { key: 'm', label: 'M', title: 'Matches', get: (r) => r.m };
 
 function battingColumns() {
@@ -150,23 +150,23 @@ function Records({ comp }) {
     <div className="records-grid">
       <RecordList
         title="Highest team totals" rows={data.highestTotals.slice(0, 10)}
-        render={(r) => (<><span className="rec-val">{r.runs}{r.allOut ? '' : `/${r.wkts}`}{r.declared ? 'd' : ''}</span><span className="rec-who">{r.team} v {r.opp}</span>{when(r)}</>)}
+        render={(r) => (<><span className="rec-val">{r.runs}{r.allOut ? '' : `/${r.wkts}`}{r.declared ? 'd' : ''}</span><span className="rec-who"><Team name={r.team} /> v <Team name={r.opp} /></span>{when(r)}</>)}
       />
       <RecordList
         title="Lowest completed totals" rows={data.lowestTotals.slice(0, 10)} note="All out"
-        render={(r) => (<><span className="rec-val">{r.runs}</span><span className="rec-who">{r.team} v {r.opp}</span>{when(r)}</>)}
+        render={(r) => (<><span className="rec-val">{r.runs}</span><span className="rec-who"><Team name={r.team} /> v <Team name={r.opp} /></span>{when(r)}</>)}
       />
       <RecordList
         title="Highest individual scores" rows={data.highestScores.slice(0, 10)}
-        render={(r) => (<><span className="rec-val">{r.runs}{r.no ? '*' : ''}</span><span className="rec-who"><PlayerLink id={r.id} name={r.name} /> <span className="muted">{r.balls != null ? `${r.balls}b, ` : ''}{r.team} v {r.opp}</span></span>{when(r)}</>)}
+        render={(r) => (<><span className="rec-val">{r.runs}{r.no ? '*' : ''}</span><span className="rec-who"><PlayerLink id={r.id} name={r.name} /> <span className="muted">{r.balls != null ? `${r.balls}b, ` : ''}<Team name={r.team} /> v <Team name={r.opp} /></span></span>{when(r)}</>)}
       />
       <RecordList
         title="Best bowling figures" rows={data.bestFigures.slice(0, 10)}
-        render={(r) => (<><span className="rec-val">{r.wkts}/{r.runs}</span><span className="rec-who"><PlayerLink id={r.id} name={r.name} /> <span className="muted">{r.team} v {r.opp}</span></span>{when(r)}</>)}
+        render={(r) => (<><span className="rec-val">{r.wkts}/{r.runs}</span><span className="rec-who"><PlayerLink id={r.id} name={r.name} /> <span className="muted"><Team name={r.team} /> v <Team name={r.opp} /></span></span>{when(r)}</>)}
       />
       <RecordList
         title="Most sixes in an innings" rows={data.mostSixesInnings.slice(0, 10)}
-        render={(r) => (<><span className="rec-val">{r.sixes}</span><span className="rec-who"><PlayerLink id={r.id} name={r.name} /> <span className="muted">{r.runs}{r.no ? '*' : ''} ({r.balls}b) v {r.opp}</span></span>{when(r)}</>)}
+        render={(r) => (<><span className="rec-val">{r.sixes}</span><span className="rec-who"><PlayerLink id={r.id} name={r.name} /> <span className="muted">{r.runs}{r.no ? '*' : ''} ({r.balls}b) v <Team name={r.opp} /></span></span>{when(r)}</>)}
         note={data.allTime ? 'Ball-by-ball era only' : undefined}
       />
     </div>
@@ -179,7 +179,7 @@ function Teams({ comp }) {
   if (error) return <p className="notice">Team results could not be loaded.</p>;
   if (!data) return <p className="loading">Loading teams…</p>;
   const cols = [
-    { key: 'team', label: 'Team', text: true, get: (r) => r.team },
+    { key: 'team', label: 'Team', text: true, get: (r) => r.team, render: (r) => <Team name={r.team} /> },
     { key: 'm', label: 'M', title: 'Matches', get: (r) => r.m },
     { key: 'w', label: 'Won', get: (r) => r.w },
     { key: 'l', label: 'Lost', get: (r) => r.l },
@@ -266,7 +266,7 @@ function AllTime({ comp }) {
   if (!data) return <p className="loading">Loading all-time figures…</p>;
 
   const name = { key: 'name', label: 'Player', text: true, get: (r) => r.n, render: (r) => <PlayerLink id={r.id} name={r.n} /> };
-  const teamC = { key: 'team', label: 'Team', text: true, get: (r) => r.t.join(', '), render: (r) => <span className="team-cell">{r.t.join(', ')}</span> };
+  const teamC = { key: 'team', label: 'Team', text: true, get: (r) => r.t.join(', '), render: (r) => <span className="team-cell"><TeamList list={r.t} /></span> };
   const m = { key: 'm', label: 'M', title: 'Matches', get: (r) => r.m };
   const src = { key: 'src', label: 'Source', text: true, get: (r) => r.src, render: (r) => <span className={`src-tag src-${r.src}`} title={r.asof ? `Wikipedia figures as of ${date(r.asof)}` : undefined}>{SRC_LABEL[r.src]}</span> };
   const batting = [

@@ -6,9 +6,12 @@ import { PENDING_KEY, useAuth } from '../auth.jsx';
 import { EXAMPLES } from '../../worker/src/prompt.js';
 import { engineReady } from '../ask/engine.js';
 import PitchLoader, { themeOf } from '../components/PitchLoader.jsx';
+import { Team } from '../components/Bits.jsx';
+import { flagCode } from '../flags.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})/;
+const TEAM_COL = /(^|_)(team|opponent|opp|country|nation|winner|loser|side|against|home|away|for)$/i;
 const PLAIN_NUMBER = /(^|_)(year|season|id)$/; // never "1,955"
 const fmt = (v, kind, col) => {
   if (v == null || v === '') return '–';
@@ -17,6 +20,7 @@ const fmt = (v, kind, col) => {
     return `${Number(d)} ${MONTHS[Number(m) - 1]} ${y}`;
   }
   if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+  if (typeof v === 'string' && TEAM_COL.test(col) && flagCode(v)) return <Team name={v} />;
   if (kind === 'number' && typeof v === 'number') {
     if (PLAIN_NUMBER.test(col)) return String(v);
     return Number.isInteger(v) ? v.toLocaleString('en-GB') : v.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

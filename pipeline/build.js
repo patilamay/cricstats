@@ -19,7 +19,7 @@ import { COMPETITIONS, CRICSHEET_BASE } from './competitions.js';
 import { parseMatch } from './parse.js';
 import { CompetitionAggregator } from './aggregate.js';
 import { buildLeaders } from './leaders.js';
-import { fetchWikiCareers, parseRegister } from './wiki.js';
+import { commonsPath, fetchWikiCareers, parseRegister, photoCredits } from './wiki.js';
 import { WIKI_FORMAT, combine } from './careers.js';
 import { Exporter } from './export.js';
 import { fetchHistory } from './history.js';
@@ -182,6 +182,21 @@ async function addWikipediaCareers({ compData, people, leaders, compMeta, tmpOut
     leaders[compId] = [...allTime, ...(leaders[compId] || []).filter((b) => b.key !== 'runs' && b.key !== 'wickets')];
     const cm = compMeta.find((c) => c.id === comp.id);
     if (cm) cm.alltime = true;
+  }
+  // Photos: Wikimedia Commons images with their credits (a player without a known licence gets none).
+  const withImg = [...byPlayer].filter(([id, w]) => w.img && people.has(id));
+  if (withImg.length) {
+    try {
+      const credits = WIKI_LOCAL ? new Map() : await photoCredits(withImg.map(([, w]) => w.img), { cacheDir: path.join(CACHE, 'wiki') });
+      let n = 0;
+      for (const [id, w] of withImg) {
+        const c = credits.get(w.img);
+        if (c) { people.get(id).photo = { f: commonsPath(w.img), a: c.a, l: c.l }; n += 1; }
+      }
+      stats.photos = n;
+    } catch (err) {
+      log(`photo credits failed, publishing without photos: ${err.message}`);
+    }
   }
   for (const id of byPlayer.keys()) { if (people.has(id)) { if (id.startsWith('w')) stats.wikiOnly += 1; else stats.matched += 1; } }
   log(`all-time tables: ${JSON.stringify(stats)}`);
@@ -383,9 +398,21 @@ async function main() {
     shards.get(sh)[id] = p;
   }
   index.sort((a, b) => b[3] - a[3]);
+  // The Players page lists the 30 most-capped with photos: only those rows carry one (keeps the index small).
+  for (const row of index.slice(0, 30)) {
+    const ph = people.get(row[0]).photo;
+    if (ph) { if (row.length < 5) row[4] = null; row[5] = ph.f; }
+  }
   writeJson(path.join(tmpOut, 'players', 'index.json'), index);
   for (const [sh, data] of shards) writeJson(path.join(tmpOut, 'players', `${sh}.json`), data);
 
+  // Leader boards carry each player's photo, so the home page needn't load player files.
+  for (const boards of Object.values(leaders)) {
+    for (const b of boards || []) for (const r of b.rows || []) {
+      const ph = r.id && people.get(r.id) && people.get(r.id).photo;
+      if (ph) r.ph = ph.f;
+    }
+  }
   writeJson(path.join(tmpOut, 'leaders.json'), leaders);
   writeJson(path.join(tmpOut, 'meta.json'), {
     updatedAt: new Date().toISOString(),

@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useMeta } from '../App.jsx';
 import { useData } from '../data.js';
 import { date, num } from '../format.js';
-import { PlayerLink, ResultRow } from '../components/Bits.jsx';
+import { PlayerLink, ResultRow, Teams } from '../components/Bits.jsx';
+import Avatar from '../components/Avatar.jsx';
 import PlayerSearch from '../components/PlayerSearch.jsx';
 import FactCard from '../components/FactCard.jsx';
 
@@ -39,9 +40,10 @@ function LeaderList({ board }) {
         {board.rows.map((r, i) => (
           <li key={r.id + i} className={`board-row${i === 0 ? ' top' : ''}`} style={{ '--share': `${Math.round((r.v / max) * 100)}%` }}>
             <span className="board-rank" aria-hidden="true">{i + 1}</span>
+            <Avatar photo={r.ph} name={r.n} />
             <span className="board-name">
               <PlayerLink id={r.id} name={r.n} />
-              <span className="board-team">{r.t.join(', ')}</span>
+              <span className="board-team"><Teams list={r.t} /></span>
             </span>
             <span className="board-val">{num(r.v)}<span className="visually-hidden"> {board.unit}</span></span>
           </li>

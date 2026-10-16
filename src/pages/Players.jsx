@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useData } from '../data.js';
 import { num } from '../format.js';
+import { Teams } from '../components/Bits.jsx';
+import Avatar from '../components/Avatar.jsx';
 import PlayerSearch from '../components/PlayerSearch.jsx';
 
 export default function Players() {
@@ -14,8 +16,8 @@ export default function Players() {
         <section className="player-section" aria-labelledby="most-capped">
           <h2 id="most-capped">Most matches played</h2>
           <ol className="most-capped">
-            {data.slice(0, 30).map(([id, n, teams, m]) => (
-              <li key={id}><Link to={`/player/${id}`}>{n}</Link><span className="muted">{teams}</span><span className="mc-m">{num(m)}</span></li>
+            {data.slice(0, 30).map(([id, n, teams, m, , ph]) => (
+              <li key={id}><Avatar photo={ph} name={n} /><Link to={`/player/${id}`}>{n}</Link><span className="muted"><Teams list={String(teams || '').split(', ').filter(Boolean)} /></span><span className="mc-m">{num(m)}</span></li>
             ))}
           </ol>
         </section>
