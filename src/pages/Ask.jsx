@@ -5,12 +5,24 @@ import { deleteConversation, listConversations, loadConversation, renameConversa
 import { PENDING_KEY, useAuth } from '../auth.jsx';
 import { EXAMPLES } from '../../worker/src/prompt.js';
 
-const fmt = (v, kind) => {
-  if (v == null) return '–';
-  if (kind === 'number' && typeof v === 'number') return Number.isInteger(v) ? v.toLocaleString('en-GB') : v.toLocaleString('en-GB', { maximumFractionDigits: 2 });
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})/;
+const PLAIN_NUMBER = /(^|_)(year|season|id)$/; // never "1,955"
+const fmt = (v, kind, col) => {
+  if (v == null || v === '') return '–';
+  if (typeof v === 'string' && ISO_DATE.test(v)) {
+    const [, y, m, d] = ISO_DATE.exec(v);
+    return `${Number(d)} ${MONTHS[Number(m) - 1]} ${y}`;
+  }
+  if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+  if (kind === 'number' && typeof v === 'number') {
+    if (PLAIN_NUMBER.test(col)) return String(v);
+    return Number.isInteger(v) ? v.toLocaleString('en-GB') : v.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
   return String(v);
 };
-const label = (c) => c.replace(/_/g, ' ').replace(/^./, (x) => x.toUpperCase());
+const LABELS = { sr: 'Strike rate', strike_rate: 'Strike rate', avg: 'Average', batting_avg: 'Batting avg', bowling_avg: 'Bowling avg', hs: 'High score', start_date: 'Date', opp: 'Opponent', not_out: 'Not out', fifties: '50s', hundreds: '100s', five_wickets: '5-wkt hauls' };
+const label = (c) => LABELS[c] || c.replace(/_/g, ' ').replace(/^./, (x) => x.toUpperCase());
 const same = (a, b) => (a || '').trim().toLowerCase().replace(/[?.!]+$/, '') === (b || '').trim().toLowerCase().replace(/[?.!]+$/, '');
 const when = (iso) => {
   const d = new Date(iso);
@@ -31,13 +43,23 @@ const DEBUG = typeof location !== 'undefined' && new URLSearchParams(location.se
 
 function ResultTable({ columns, kinds, rows }) {
   if (!rows || !rows.length) return <p className="muted">No matching records.</p>;
+  const ranked = rows.length > 1;
+  const align = (i) => (kinds[i] === 'number' && !PLAIN_NUMBER.test(columns[i]) ? 'num' : 'text');
   return (
-    <div className="table-wrap">
+    <div className="table-wrap answer-table">
       <table className="data">
-        <thead><tr>{columns.map((c, i) => <th key={c} scope="col" className={kinds[i] === 'number' ? 'num' : 'text'}>{label(c)}</th>)}</tr></thead>
+        <thead>
+          <tr>
+            {ranked && <th scope="col" className="num rank"><span className="visually-hidden">Rank</span>#</th>}
+            {columns.map((c, i) => <th key={c} scope="col" className={align(i)}>{label(c)}</th>)}
+          </tr>
+        </thead>
         <tbody>
           {rows.slice(0, 50).map((r, i) => (
-            <tr key={i}>{r.map((v, j) => <td key={j} className={kinds[j] === 'number' ? 'num' : 'text'}>{fmt(v, kinds[j])}</td>)}</tr>
+            <tr key={i}>
+              {ranked && <td className="num rank">{i + 1}</td>}
+              {r.map((v, j) => <td key={j} className={`${align(j)}${j === 0 ? ' lead' : ''}`}>{fmt(v, kinds[j], columns[j])}</td>)}
+            </tr>
           ))}
         </tbody>
       </table>

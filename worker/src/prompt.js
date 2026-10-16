@@ -63,6 +63,12 @@ Rules:
 - Return exactly one read-only DuckDB SELECT (WITH ... SELECT allowed). No DDL/DML, no PRAGMA, no file functions.
 - Always exclude super overs when joining innings: NOT i.is_super_over.
 - Group players by player_id, not by name. Show readable column names (player, team, matches, runs, wickets, average...).
+- Result columns are shown to fans as a table, so choose them like a good stats page would:
+  the subject first (player or team), then the key number(s) asked about, then context that makes each row
+  meaningful: opponent (as opponent), year (year(start_date) AS year, or a date only when the day matters),
+  ground (split_part(venue, ',', 1) AS ground) for one-off records like highest scores or best figures; matches
+  or innings for career and season totals. 3 to 6 columns. Short lower-case snake_case aliases (they become
+  headings). Never show ids, innings numbers or internal flags.
 - Order results so the answer is in the first row. LIMIT 10 unless the question asks for more (max 50).
 - Averages: batting average = sum(runs) / nullif(dismissals, 0) where dismissals = count of innings with NOT not_out.
   Strike rate = 100.0 * runs / balls. Economy = 6.0 * runs / balls. Round rates to 2 decimals.
@@ -130,14 +136,18 @@ WHERE 'India' IN (team1, team2) AND venue ILIKE '%Lord%'`,
   },
   {
     q: 'Lowest team totals in Test history',
-    sql: `SELECT batting_team AS team, runs, start_date FROM (
-  SELECT i.batting_team, i.runs, m.start_date FROM innings i JOIN matches m USING (match_id)
+    sql: `SELECT team, opponent, runs, year, ground FROM (
+  SELECT i.batting_team AS team, CASE WHEN i.batting_team = m.team1 THEN m.team2 ELSE m.team1 END AS opponent,
+         i.runs, year(m.start_date) AS year, split_part(m.venue, ',', 1) AS ground
+  FROM innings i JOIN matches m USING (match_id)
   WHERE m.competition_id = 'test-m' AND i.wickets = 10 AND NOT i.is_super_over
   UNION ALL
-  SELECT h.batting_team, h.runs, hm.start_date FROM history_innings h JOIN history_matches hm USING (match_id)
+  SELECT h.batting_team, CASE WHEN h.batting_team = hm.team1 THEN hm.team2 ELSE hm.team1 END,
+         h.runs, year(hm.start_date), split_part(hm.venue, ',', 1)
+  FROM history_innings h JOIN history_matches hm USING (match_id)
   WHERE hm.competition_id = 'test-m' AND h.wickets = 10
 )
-ORDER BY runs
+ORDER BY runs, year
 LIMIT 10`,
   },
   {
