@@ -112,6 +112,8 @@ jobs:
         run: |
           python3 -m pip install --quiet duckdb
           python3 pipeline/make_db.py .cache/export .cache/db
+          # The home page's "did you know" facts, computed from the database.
+          python3 pipeline/facts.py .cache/db/parquet public/data
           (cd .cache/db && zip -q -r ../cricstats-parquet.zip parquet README.md)
           # The site's own JSON files, so code-only changes can redeploy without recomputing everything.
           (cd public/data && zip -q -r ../../.cache/cricstats-site-data.zip .)

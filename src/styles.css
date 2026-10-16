@@ -488,3 +488,20 @@ td.src-cell { color: var(--muted); font-size: 0.85rem; white-space: normal; min-
   .conv-tools { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) { .ask-side { transition: none; } }
+
+/* Home: rotating headline + did-you-know fact */
+.hero-eyebrow { font: 600 0.82rem/1 var(--body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--coral-ink); margin-bottom: 0.9rem; }
+.fact-card { max-width: 34rem; margin: 1.6rem auto 0; text-align: left; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--coral); border-radius: var(--r-md); padding: 1rem 1.15rem 0.9rem; box-shadow: var(--shadow); }
+.fact-card.placeholder { min-height: 8.5rem; box-shadow: none; background: rgb(255 255 255 / 0.4); border-color: transparent; }
+.fact-tag { font: 600 0.75rem/1 var(--body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--coral-ink); margin: 0 0 0.5rem; }
+.fact-text { font: 500 1.08rem/1.5 var(--display); color: var(--ink); margin: 0 0 0.85rem; text-wrap: pretty; animation: fact-in 0.35s ease; }
+.fact-actions { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.fact-btn { font: 600 0.88rem/1 var(--body); padding: 0.55rem 0.95rem; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--teal-ink); text-decoration: none; cursor: pointer; }
+.fact-btn:hover { border-color: var(--teal); color: var(--teal-ink); }
+.fact-btn.primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+.fact-btn.primary:hover { color: #fff; filter: brightness(1.08); }
+.fact-btn.ghost { border-color: transparent; background: transparent; color: var(--muted); margin-left: auto; }
+.fact-btn.ghost:hover { color: var(--teal-ink); }
+@keyframes fact-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .fact-text { animation: none; } }
+@media (max-width: 480px) { .fact-btn.ghost { margin-left: 0; } }
