@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ask, askEnabled, historyFrom, runExample } from '../ask/client.js';
+import { deleteConversation, listConversations, loadConversation, renameConversation, saveTurns } from '../ask/store.js';
+import { PENDING_KEY, useAuth } from '../auth.jsx';
 import { EXAMPLES } from '../../worker/src/prompt.js';
 
 const fmt = (v, kind) => {
@@ -10,12 +12,25 @@ const fmt = (v, kind) => {
 };
 const label = (c) => c.replace(/_/g, ' ').replace(/^./, (x) => x.toUpperCase());
 const same = (a, b) => (a || '').trim().toLowerCase().replace(/[?.!]+$/, '') === (b || '').trim().toLowerCase().replace(/[?.!]+$/, '');
+const when = (iso) => {
+  const d = new Date(iso);
+  const days = Math.floor((Date.now() - d) / 86400000);
+  if (days < 1) return 'Today';
+  if (days < 2) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
+};
+const store = {
+  get: (k) => { try { return sessionStorage.getItem(k); } catch { return null; } },
+  set: (k, v) => { try { sessionStorage.setItem(k, v); } catch { /* storage unavailable */ } },
+  del: (k) => { try { sessionStorage.removeItem(k); } catch { /* storage unavailable */ } },
+};
 
 // The SQL is only shown with ?debug in the address (handy when checking an answer).
 const DEBUG = typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug');
 
 function ResultTable({ columns, kinds, rows }) {
-  if (!rows.length) return <p className="muted">No matching records.</p>;
+  if (!rows || !rows.length) return <p className="muted">No matching records.</p>;
   return (
     <div className="table-wrap">
       <table className="data">
@@ -42,7 +57,7 @@ function Turn({ item, followUp, innerRef }) {
             {item.answer && <p className="answer-text">{item.answer}</p>}
             {item.note && <p className="answer-note">How this was counted: {item.note}</p>}
             <ResultTable columns={item.columns} kinds={item.kinds} rows={item.rows} />
-            {DEBUG && (
+            {DEBUG && item.sql && (
               <details className="answer-sql">
                 <summary>Show the query</summary>
                 <pre><code>{item.sql}</code></pre>
@@ -55,24 +70,95 @@ function Turn({ item, followUp, innerRef }) {
   );
 }
 
+function ConversationItem({ c, active, onOpen, onRename, onDelete }) {
+  const [mode, setMode] = useState(null); // null | 'rename' | 'delete'
+  const [title, setTitle] = useState(c.title);
+  if (mode === 'rename') {
+    return (
+      <li className="conv editing">
+        <form onSubmit={(e) => { e.preventDefault(); onRename(c.id, title); setMode(null); }}>
+          <label className="visually-hidden" htmlFor={`rn-${c.id}`}>Conversation name</label>
+          <input id={`rn-${c.id}`} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} autoFocus onKeyDown={(e) => e.key === 'Escape' && setMode(null)} />
+          <div className="conv-actions"><button type="submit">Save</button><button type="button" onClick={() => setMode(null)}>Cancel</button></div>
+        </form>
+      </li>
+    );
+  }
+  if (mode === 'delete') {
+    return (
+      <li className="conv editing">
+        <p>Delete “{c.title}”?</p>
+        <div className="conv-actions"><button type="button" className="danger" onClick={() => onDelete(c.id)}>Delete</button><button type="button" onClick={() => setMode(null)}>Cancel</button></div>
+      </li>
+    );
+  }
+  return (
+    <li className={`conv${active ? ' active' : ''}`}>
+      <button type="button" className="conv-open" onClick={() => onOpen(c.id)} aria-current={active ? 'true' : undefined}>
+        <span className="conv-title">{c.title}</span>
+        <span className="conv-when">{when(c.updated_at)}</span>
+      </button>
+      <span className="conv-tools">
+        <button type="button" onClick={() => { setTitle(c.title); setMode('rename'); }} aria-label={`Rename “${c.title}”`} title="Rename">✎</button>
+        <button type="button" onClick={() => setMode('delete')} aria-label={`Delete “${c.title}”`} title="Delete">✕</button>
+      </span>
+    </li>
+  );
+}
+
 const FOLLOW_UPS = ['And for women?', 'Only since 2020', 'Show the top 20'];
 
 export default function Ask() {
-  const [params] = useSearchParams();
+  const { enabled: accounts, ready, user, signIn } = useAuth();
+  const [params, setParams] = useSearchParams();
   const [q, setQ] = useState('');
   const [stage, setStage] = useState(null);
   const [thread, setThread] = useState([]);
+  const [convId, setConvId] = useState(null);
+  const [convs, setConvs] = useState(null);
+  const [saveError, setSaveError] = useState(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [notFound, setNotFound] = useState(false);
   const asked = useRef(null);
   const inputRef = useRef(null);
   const lastRef = useRef(null);
   const enabled = askEnabled();
   const started = thread.length > 0 || !!stage;
+  const signedIn = !!user;
+
+  const refreshList = useCallback(() => {
+    if (!signedIn) { setConvs(null); return; }
+    listConversations().then(setConvs).catch(() => setConvs([]));
+  }, [signedIn]);
+  useEffect(refreshList, [refreshList]);
+
+  const showConv = (id) => {
+    const next = new URLSearchParams(params);
+    next.delete('q');
+    if (id) next.set('c', id); else next.delete('c');
+    setParams(next, { replace: true });
+  };
+
+  // Save one or more new turns for a signed-in user.
+  const persist = async (id, items) => {
+    try {
+      const newId = await saveTurns(id, items);
+      setSaveError(null);
+      if (newId !== id) { setConvId(newId); showConv(newId); }
+      refreshList();
+      return newId;
+    } catch (err) {
+      setSaveError(err.message || 'This conversation could not be saved.');
+      return id;
+    }
+  };
 
   const go = async (question, example, fresh = false) => {
     const text = (example ? example.q : question).trim();
     if (!text || stage) return;
     const base = fresh ? [] : thread;
-    if (fresh) setThread([]);
+    const baseId = fresh ? null : convId;
+    if (fresh) { setThread([]); setConvId(null); setNotFound(false); }
     setQ('');
     setStage('Starting');
     let item;
@@ -81,11 +167,52 @@ export default function Ask() {
     } catch (err) {
       item = { question: text, error: err.message || 'Something went wrong. Try again.' };
     }
-    setThread([...base, item].slice(-12));
+    setThread([...base, item].slice(-100));
     setStage(null);
+    if (signedIn) await persist(baseId, [item]);
   };
 
-  // A question in the address (from the search box or a shared link) starts a new conversation.
+  const openConv = async (id) => {
+    if (stage) return;
+    setPanelOpen(false);
+    setThread([]);
+    setStage('Opening the conversation');
+    try {
+      const conv = await loadConversation(id);
+      if (!conv) { setNotFound(true); setThread([]); setConvId(null); showConv(null); return; }
+      setNotFound(false);
+      setThread(conv.turns);
+      setConvId(conv.id);
+      showConv(conv.id);
+    } catch (err) {
+      setSaveError(err.message);
+    } finally {
+      setStage(null);
+    }
+  };
+
+  const restart = () => {
+    setThread([]); setConvId(null); setQ(''); setNotFound(false); setPanelOpen(false);
+    asked.current = null; showConv(null); inputRef.current?.focus();
+  };
+
+  // A guest who signs in mid-conversation: keep it across the Google redirect, then save it.
+  const signInAndKeep = () => {
+    if (thread.length) store.set(PENDING_KEY, JSON.stringify(thread));
+    signIn();
+  };
+  useEffect(() => {
+    if (!ready || !signedIn) return;
+    const raw = store.get(PENDING_KEY);
+    if (!raw) return;
+    store.del(PENDING_KEY);
+    try {
+      const items = JSON.parse(raw);
+      if (Array.isArray(items) && items.length) { setThread(items); persist(null, items); }
+    } catch { /* ignore */ }
+  }, [ready, signedIn]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ?q= (from the search box or a shared link) starts a new conversation; ?c= opens a saved one.
   useEffect(() => {
     const initial = params.get('q');
     if (initial && asked.current !== initial) {
@@ -95,9 +222,12 @@ export default function Ask() {
       else setQ(initial);
     }
   }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const c = params.get('c');
+    if (c && ready && signedIn && c !== convId && !stage) openConv(c);
+  }, [params, ready, signedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    // Bring the newest question and answer into view (from its top, so long tables start where they should).
     if (thread.length || stage) lastRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (!stage && thread.length) inputRef.current?.focus({ preventScroll: true });
   }, [thread, stage]);
@@ -107,8 +237,16 @@ export default function Ask() {
     if (q.trim()) go(q);
   };
 
-  const restart = () => { setThread([]); setQ(''); asked.current = null; inputRef.current?.focus(); };
+  const onRename = async (id, title) => { try { await renameConversation(id, title); refreshList(); } catch (err) { setSaveError(err.message); } };
+  const onDelete = async (id) => {
+    try {
+      await deleteConversation(id);
+      if (id === convId) restart();
+      refreshList();
+    } catch (err) { setSaveError(err.message); }
+  };
 
+  const wantsSaved = params.get('c');
   const form = (
     <form className="ask-form" onSubmit={submit} role="search">
       <label htmlFor="ask-input" className="visually-hidden">{started ? 'Ask a follow-up' : 'Your question'}</label>
@@ -121,51 +259,85 @@ export default function Ask() {
     </form>
   );
 
-  return (
-    <div className={`page ask-page${started ? ' chatting' : ''}`}>
-      <div className="ask-head">
-        <h1>Ask CricStats</h1>
-        {started && <button type="button" className="ask-new" onClick={restart} disabled={!!stage}>New conversation</button>}
+  const sidebar = accounts && signedIn && (
+    <aside className={`ask-side${panelOpen ? ' open' : ''}`} aria-label="Your conversations">
+      <div className="ask-side-head">
+        <h2>Your conversations</h2>
+        <button type="button" className="ask-side-close" onClick={() => setPanelOpen(false)} aria-label="Close">✕</button>
       </div>
-      {!started && <p className="muted ask-sub">Ask about players, teams, matches and records, then ask follow-ups. Answers are worked out from the data on this site.</p>}
+      <button type="button" className="ask-new wide" onClick={restart} disabled={!!stage}>+ New conversation</button>
+      {convs == null ? <p className="muted small">Loading…</p> : convs.length === 0 ? (
+        <p className="muted small">Your questions are saved here as you ask them.</p>
+      ) : (
+        <ul className="conv-list">
+          {convs.map((c) => <ConversationItem key={c.id} c={c} active={c.id === convId} onOpen={openConv} onRename={onRename} onDelete={onDelete} />)}
+        </ul>
+      )}
+    </aside>
+  );
 
-      {!started && form}
-      {!enabled && <p className="ask-off">Typed questions aren't switched on yet. The example questions below work now.</p>}
-
-      {!started && (
-        <div className="ask-examples" role="group" aria-label="Example questions">
-          {EXAMPLES.slice(0, 6).map((ex) => (
-            <button key={ex.q} type="button" disabled={!!stage} onClick={() => go(ex.q, ex, true)}>{ex.q}</button>
-          ))}
+  return (
+    <div className={`page ask-page${started ? ' chatting' : ''}${sidebar ? ' with-side' : ''}`}>
+      {sidebar}
+      {panelOpen && <button type="button" className="ask-scrim" aria-label="Close conversations" onClick={() => setPanelOpen(false)} />}
+      <div className="ask-main">
+        <div className="ask-head">
+          <h1>Ask CricStats</h1>
+          <div className="ask-head-tools">
+            {sidebar && <button type="button" className="ask-new ask-side-toggle" onClick={() => setPanelOpen(true)}>Your conversations</button>}
+            {started && <button type="button" className="ask-new" onClick={restart} disabled={!!stage}>New conversation</button>}
+          </div>
         </div>
-      )}
+        {!started && <p className="muted ask-sub">Ask about players, teams, matches and records, then ask follow-ups. Answers are worked out from the data on this site.</p>}
 
-      {started && (
-        <ol className="thread" aria-live="polite">
-          {thread.map((item, i) => <Turn key={i} item={item} followUp={i > 0} innerRef={!stage && i === thread.length - 1 ? lastRef : null} />)}
-          {stage && (
-            <li className="turn pending" ref={lastRef}>
-              <p className="ask-stage" role="status"><span className="dot" aria-hidden="true" />{stage}…{thread.length === 0 && <span className="muted"> The first question loads the data engine, which takes a few seconds.</span>}</p>
-            </li>
-          )}
-        </ol>
-      )}
+        {accounts && ready && !signedIn && wantsSaved && !started && (
+          <p className="notice">This is a saved conversation. <button type="button" className="linkish" onClick={signInAndKeep}>Sign in with Google</button> to open it.</p>
+        )}
+        {notFound && <p className="notice">That conversation wasn't found. It may have been deleted.</p>}
 
-      {started && (
-        <div className="ask-dock">
-          {enabled && !stage && thread.length > 0 && !thread[thread.length - 1].error && (
-            <div className="ask-examples follow" role="group" aria-label="Follow-up ideas">
-              {FOLLOW_UPS.filter((f) => !thread.some((t) => same(t.question, f))).map((f) => <button key={f} type="button" onClick={() => go(f)}>{f}</button>)}
-            </div>
-          )}
-          {form}
-        </div>
-      )}
+        {!started && form}
+        {!enabled && <p className="ask-off">Typed questions aren't switched on yet. The example questions below work now.</p>}
 
-      <p className="muted ask-fine">
-        Typed questions are turned into a database query by an AI model (Claude), then run in your browser against this site's data.
-        The model can misread a question, so check the "How this was counted" line if a number looks off.
-      </p>
+        {!started && (
+          <div className="ask-examples" role="group" aria-label="Example questions">
+            {EXAMPLES.slice(0, 6).map((ex) => (
+              <button key={ex.q} type="button" disabled={!!stage} onClick={() => go(ex.q, ex, true)}>{ex.q}</button>
+            ))}
+          </div>
+        )}
+
+        {started && (
+          <ol className="thread" aria-live="polite">
+            {thread.map((item, i) => <Turn key={i} item={item} followUp={i > 0} innerRef={!stage && i === thread.length - 1 ? lastRef : null} />)}
+            {stage && (
+              <li className="turn pending" ref={lastRef}>
+                <p className="ask-stage" role="status"><span className="dot" aria-hidden="true" />{stage}…{thread.length === 0 && stage !== 'Opening the conversation' && <span className="muted"> The first question loads the data engine, which takes a few seconds.</span>}</p>
+              </li>
+            )}
+          </ol>
+        )}
+
+        {started && (
+          <div className="ask-dock">
+            {saveError && <p className="ask-save-note error">{saveError}</p>}
+            {accounts && ready && !signedIn && thread.length > 0 && !stage && (
+              <p className="ask-save-note"><button type="button" className="linkish" onClick={signInAndKeep}>Sign in with Google</button> to save this conversation and pick it up later.</p>
+            )}
+            {enabled && !stage && thread.length > 0 && !thread[thread.length - 1].error && (
+              <div className="ask-examples follow" role="group" aria-label="Follow-up ideas">
+                {FOLLOW_UPS.filter((f) => !thread.some((t) => same(t.question, f))).map((f) => <button key={f} type="button" onClick={() => go(f)}>{f}</button>)}
+              </div>
+            )}
+            {form}
+          </div>
+        )}
+
+        <p className="muted ask-fine">
+          Typed questions are turned into a database query by an AI model (Claude), then run in your browser against this site's data.
+          The model can misread a question, so check the "How this was counted" line if a number looks off.
+          {accounts && <> Signed-in users' conversations are saved to their account; see <Link to="/privacy">Privacy</Link>.</>}
+        </p>
+      </div>
     </div>
   );
 }

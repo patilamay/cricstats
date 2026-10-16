@@ -128,6 +128,20 @@ jobs:
           gh release edit data --notes "$notes"
           gh release upload data .cache/cricstats.duckdb.gz .cache/cricstats-parquet.zip .cache/cricstats-site-data.zip .cache/db/README.md --clobber
 
+      # Supabase pauses free projects after a week without activity. One tiny request a day keeps
+      # sign-in and saved conversations awake. Skipped until Supabase is configured in src/config.js.
+      - name: Keep Supabase awake
+        if: github.event_name == 'schedule'
+        continue-on-error: true
+        run: |
+          url=$(grep -oP "VITE_SUPABASE_URL \?\? '\K[^']+" src/config.js || true)
+          key=$(grep -oP "VITE_SUPABASE_ANON_KEY \?\? '\K[^']+" src/config.js || true)
+          if [ -n "$url" ] && [ -n "$key" ]; then
+            curl -sS -o /dev/null -w "Supabase answered: %{http_code}\n" "$url/rest/v1/conversations?select=id&limit=1" -H "apikey: $key" -H "Authorization: Bearer $key" || echo "::warning::Supabase did not answer the keep-awake request."
+          else
+            echo "Supabase is not configured yet."
+          fi
+
       - name: Report on the data
         if: steps.mode.outputs.full == 'true'
         run: node pipeline/report.js
