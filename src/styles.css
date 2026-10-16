@@ -519,58 +519,90 @@ td.src-cell { color: var(--muted); font-size: 0.85rem; white-space: normal; min-
 .answer-table table.data td.num { font-variant-numeric: tabular-nums; }
 .answer-table table.data tbody tr:first-child td { background: color-mix(in srgb, var(--teal-soft) 55%, transparent); }
 
-/* Ask: loading animations (PitchLoader) */
-.pitch-loader { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
-.pitch-svg { width: 132px; height: auto; flex: none; overflow: visible; }
+/* Ask: loading animations (PitchLoader), themed by the question */
+.pitch-loader { display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem; }
+.pitch-svg { width: min(100%, 340px); height: auto; overflow: visible; }
 .pitch-caption { margin: 0; color: var(--teal-ink); font-weight: 600; }
 .pitch-caption .muted { font-weight: 400; display: block; font-size: 0.88rem; }
-.pl-pitch { fill: var(--teal-bar); }
-.pl-crease { fill: var(--teal-bar); }
-.pl-stumps rect { fill: var(--teal-ink); }
-.pl-bail { fill: var(--teal-ink); transform-box: fill-box; transform-origin: center; }
-.pl-bat rect { fill: #c9a26b; }
-.pl-bat .pl-handle { fill: var(--teal-ink); }
-.pl-bat { transform-box: view-box; transform-origin: 145px 18px; transform: rotate(-130deg); }
-.pl-ball { fill: var(--coral); transform: translate(110px, 69px); }
+.pl-ground { fill: var(--teal-bar); }
+.pl-stump { fill: var(--teal-ink); }
+.pl-bail { fill: var(--coral); transform-box: fill-box; transform-origin: center; }
+.pl-figure line { stroke: var(--teal-ink); stroke-width: 5; stroke-linecap: round; fill: none; }
+.pl-head { fill: var(--teal-ink); }
+.pl-bat { fill: #c9a26b; }
+.pl-ball { fill: var(--coral); }
 
-.pitch-loader.quick .pl-ball { animation: pl-bowl 1.5s cubic-bezier(.45,.05,.55,.95) infinite; }
-.pitch-loader.quick .pl-bail.b1 { animation: pl-bail1 1.5s ease-out infinite; }
-.pitch-loader.quick .pl-bail.b2 { animation: pl-bail2 1.5s ease-out infinite; }
-@keyframes pl-bowl {
-  0% { transform: translate(8px, 26px); opacity: 0; }
-  8% { opacity: 1; }
-  55% { transform: translate(112px, 69px); }
-  82% { transform: translate(176px, 47px); opacity: 1; }
-  100% { transform: translate(178px, 49px); opacity: 0; }
-}
-@keyframes pl-bail1 {
-  0%, 81% { transform: none; opacity: 1; }
-  95% { transform: translate(-9px, -17px) rotate(-55deg); opacity: 1; }
-  100% { transform: translate(-11px, -19px) rotate(-65deg); opacity: 0; }
-}
-@keyframes pl-bail2 {
-  0%, 81% { transform: none; opacity: 1; }
-  95% { transform: translate(10px, -19px) rotate(45deg); opacity: 1; }
-  100% { transform: translate(12px, -21px) rotate(55deg); opacity: 0; }
+/* Batting: backlift, drive, ball lofted back over the bowler */
+.bt-swing { transform-box: view-box; transform-origin: 246px 55px; transform: rotate(-115deg); animation: bt-swing 2.4s ease-in-out infinite; }
+.bt-ball { animation: bt-ball 2.4s cubic-bezier(.4,0,.6,1) infinite; }
+@keyframes bt-swing { 0%, 45% { transform: rotate(-115deg); } 60% { transform: rotate(10deg); } 74%, 90% { transform: rotate(125deg); } 100% { transform: rotate(-115deg); } }
+@keyframes bt-ball {
+  0% { transform: translate(14px, 46px); opacity: 0; } 6% { opacity: 1; }
+  44% { transform: translate(168px, 95px); }
+  60% { transform: translate(226px, 82px); }
+  82% { transform: translate(140px, 4px); opacity: 1; }
+  100% { transform: translate(70px, -24px); opacity: 0; }
 }
 
-.pitch-loader.long .pl-ball { animation: pl-six 2.2s cubic-bezier(.4,0,.6,1) infinite; }
-.pitch-loader.long .pl-bat { animation: pl-swing 2.2s ease-in-out infinite; }
-@keyframes pl-six {
-  0% { transform: translate(8px, 24px); opacity: 0; }
-  6% { opacity: 1; }
-  44% { transform: translate(98px, 69px); }
-  60% { transform: translate(136px, 56px); }
-  80% { transform: translate(88px, -10px); opacity: 1; }
-  100% { transform: translate(40px, -46px); opacity: 0; }
+/* Bowling: run-up, arm over, ball hits the stumps, red bails fly */
+.bw-runner { animation: bw-run 2.6s ease-in-out infinite; }
+.bw-leg { transform-box: view-box; transform-origin: 62px 74px; }
+.bw-leg.l1 { animation: bw-leg 0.36s ease-in-out infinite alternate; }
+.bw-leg.l2 { animation: bw-leg 0.36s ease-in-out infinite alternate-reverse; }
+.bw-arm { transform-box: view-box; transform-origin: 60px 53px; animation: bw-arm 2.6s ease-in-out infinite; }
+.bw-ball { animation: bw-ball 2.6s linear infinite; }
+.theme-bowling .pl-bail.b1 { animation: bail1 2.6s ease-out infinite; }
+.theme-bowling .pl-bail.b2 { animation: bail2 2.6s ease-out infinite; }
+@keyframes bw-run { 0% { transform: translateX(-46px); } 42% { transform: translateX(58px); } 60% { transform: translateX(72px); } 100% { transform: translateX(72px); } }
+@keyframes bw-leg { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+@keyframes bw-arm { 0%, 34% { transform: rotate(20deg); } 48% { transform: rotate(200deg); } 56% { transform: rotate(380deg); } 100% { transform: rotate(380deg); } }
+@keyframes bw-ball {
+  0%, 46% { transform: translate(120px, 32px); opacity: 0; }
+  47% { transform: translate(120px, 32px); opacity: 1; }
+  68% { transform: translate(214px, 95px); }
+  80% { transform: translate(282px, 74px); opacity: 1; }
+  90%, 100% { transform: translate(284px, 76px); opacity: 0; }
 }
-@keyframes pl-swing {
-  0%, 44% { transform: rotate(-130deg); }
-  60% { transform: rotate(10deg); }
-  76% { transform: rotate(120deg); }
-  90% { transform: rotate(120deg); }
-  100% { transform: rotate(-130deg); }
+@keyframes bail1 { 0%, 79% { transform: none; opacity: 1; } 92% { transform: translate(-12px, -22px) rotate(-60deg); opacity: 1; } 100% { transform: translate(-14px, -24px) rotate(-70deg); opacity: 0; } }
+@keyframes bail2 { 0%, 79% { transform: none; opacity: 1; } 92% { transform: translate(13px, -24px) rotate(50deg); opacity: 1; } 100% { transform: translate(15px, -26px) rotate(60deg); opacity: 0; } }
+
+/* Fielding: ready stance, full-length dive, ball into the hands */
+.fd-dive { transform-box: view-box; transform-origin: 200px 98px; animation: fd-dive 2.6s ease-in-out infinite; }
+.fd-ball { animation: fd-ball 2.6s ease-in infinite; }
+@keyframes fd-dive {
+  0%, 30% { transform: none; } 36% { transform: translateY(3px); }
+  56%, 84% { transform: translate(-20px, -10px) rotate(-75deg); }
+  100% { transform: none; }
 }
+@keyframes fd-ball {
+  0% { transform: translate(312px, 18px); opacity: 0; } 8% { opacity: 1; }
+  56% { transform: translate(122px, 82px); }
+  84% { transform: translate(122px, 82px); opacity: 1; }
+  92%, 100% { transform: translate(122px, 82px); opacity: 0; }
+}
+
+/* Stadium: floodlights flicker on, scoreboard ticks, a ball sails into the stands */
+.st-stand { fill: var(--teal-soft); }
+.st-stand-front { fill: var(--teal-bar); }
+.st-field { fill: color-mix(in srgb, var(--teal-bar) 60%, #9fd3a8); }
+.st-tower line { stroke: var(--teal-ink); stroke-width: 3; stroke-linecap: round; }
+.st-lamp { fill: var(--teal-ink); }
+.st-bulb { fill: #ffe9a8; animation: st-flick 1.6s ease-in-out infinite; }
+.st-bulb.d2 { animation-delay: 0.2s; } .st-bulb.d3 { animation-delay: 0.4s; }
+.st-board { fill: var(--teal-ink); }
+.st-score { fill: #ffe9a8; font: 700 13px/1 var(--body); text-anchor: middle; opacity: 0; letter-spacing: 0.06em; }
+.st-score.s1 { animation: st-score 3s steps(1) infinite; }
+.st-score.s2 { animation: st-score 3s steps(1) infinite 1s; }
+.st-score.s3 { animation: st-score 3s steps(1) infinite 2s; }
+.st-ball { animation: st-ball 3s ease-in-out infinite; }
+@keyframes st-flick { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes st-score { 0% { opacity: 1; } 33.3% { opacity: 0; } }
+@keyframes st-ball { 0%, 40% { transform: translate(160px, 96px); opacity: 0; } 45% { opacity: 1; } 75% { transform: translate(236px, 30px); opacity: 1; } 90%, 100% { transform: translate(262px, 62px); opacity: 0; } }
+
 @media (prefers-reduced-motion: reduce) {
-  .pitch-loader .pl-ball, .pitch-loader .pl-bail, .pitch-loader .pl-bat { animation: none !important; }
+  .pitch-loader * { animation: none !important; }
+  .bt-ball { transform: translate(168px, 95px); }
+  .bw-ball { transform: translate(214px, 95px); opacity: 1; }
+  .fd-ball { transform: translate(260px, 40px); }
+  .st-score.s3 { opacity: 1; }
 }

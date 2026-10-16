@@ -5,7 +5,7 @@ import { deleteConversation, listConversations, loadConversation, renameConversa
 import { PENDING_KEY, useAuth } from '../auth.jsx';
 import { EXAMPLES } from '../../worker/src/prompt.js';
 import { engineReady } from '../ask/engine.js';
-import PitchLoader from '../components/PitchLoader.jsx';
+import PitchLoader, { themeOf } from '../components/PitchLoader.jsx';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})/;
@@ -139,7 +139,8 @@ export default function Ask() {
   const [q, setQ] = useState('');
   const [stage, setStage] = useState(null);
   const [pendingQ, setPendingQ] = useState(null);
-  const [longInnings, setLongInnings] = useState(false);
+  const [heavy, setHeavy] = useState(false);
+  const [theme, setTheme] = useState('bowling');
   const [thread, setThread] = useState([]);
   const [convId, setConvId] = useState(null);
   const [convs, setConvs] = useState(null);
@@ -182,15 +183,10 @@ export default function Ask() {
 
   const onStage = (name, meta) => {
     setStage(name);
-    if (meta && meta.heavy) setLongInnings(true);
+    if (meta && meta.heavy) setHeavy(true);
   };
 
-  // Anything still running after 5 seconds switches to the long animation.
-  useEffect(() => {
-    if (!stage || longInnings) return undefined;
-    const t = setTimeout(() => setLongInnings(true), 5000);
-    return () => clearTimeout(t);
-  }, [stage, longInnings]);
+
 
   const go = async (question, example, fresh = false) => {
     const text = (example ? example.q : question).trim();
@@ -200,8 +196,11 @@ export default function Ask() {
     if (fresh) { setThread([]); setConvId(null); setNotFound(false); }
     setQ('');
     setPendingQ(text);
-    // First question of a visit loads the data engine: that's a long innings.
-    setLongInnings(!engineReady());
+    setHeavy(false);
+    // Animation follows the subject of the question; follow-ups without one keep the last theme.
+    const prev = base.length ? base[base.length - 1].theme : null;
+    const nextTheme = themeOf(example ? example.q : text, example ? example.sql : '') || prev || 'bowling';
+    setTheme(nextTheme);
     setStage('Working out the query');
     let item;
     try {
@@ -209,6 +208,7 @@ export default function Ask() {
     } catch (err) {
       item = { question: text, error: err.message || 'Something went wrong. Try again.' };
     }
+    item.theme = themeOf(item.standalone || text, item.sql || '') || nextTheme;
     setThread([...base, item].slice(-100));
     setStage(null);
     setPendingQ(null);
@@ -358,7 +358,7 @@ export default function Ask() {
             {stage && (
               <li className="turn pending" ref={lastRef}>
                 {pendingQ && <p className="turn-q">{pendingQ}</p>}
-                <PitchLoader stage={stage} mode={longInnings ? 'long' : 'quick'} note={thread.length === 0 && !engineReady() && stage !== 'Opening the conversation' ? 'The first question loads the data engine, which takes a few seconds.' : null} />
+                <PitchLoader stage={stage} theme={theme} heavy={heavy} note={thread.length === 0 && !engineReady() && stage !== 'Opening the conversation' ? 'The first question loads the data engine, which takes a few seconds.' : null} />
               </li>
             )}
           </ol>
