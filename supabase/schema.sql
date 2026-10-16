@@ -33,6 +33,10 @@ create table if not exists public.turns (
 );
 create index if not exists turns_conversation on public.turns (conversation_id, id);
 
+-- Added later: the follow-up suggestions shown under each answer (up to 3 short questions).
+alter table public.turns add column if not exists followups jsonb
+  check (followups is null or (jsonb_typeof(followups) = 'array' and jsonb_array_length(followups) <= 5 and pg_column_size(followups) <= 2000));
+
 alter table public.conversations enable row level security;
 alter table public.turns enable row level security;
 
