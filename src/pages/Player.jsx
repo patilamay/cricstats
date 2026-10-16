@@ -80,7 +80,7 @@ export default function Player() {
                   const r = career[c.id];
                   return (
                     <tr key={c.id}>
-                      <td className="text"><Link to={`/stats/${c.id}/alltime`}>{c.name}</Link></td>
+                      <td className="text"><Link to={`/stats/${c.id}/batting`}>{c.name}</Link></td>
                       <td className="num">{r.m}</td><td className="num strong">{num(r.r)}</td><td className="num">{dec(r.avg)}</td>
                       <td className="num">{r.c100}</td><td className="num">{r.c50}</td><td className="num">{r.hs == null ? '–' : `${r.hs}${r.hsNo ? '*' : ''}`}</td>
                       <td className="num strong">{r.wk}</td><td className="num">{dec(r.bavg)}</td><td className="num">{dec(r.econ)}</td>

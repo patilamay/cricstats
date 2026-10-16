@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, Navigate, NavLink, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useComp, useMeta } from '../App.jsx';
 import { useData } from '../data.js';
 import { date, dec, num, overs } from '../format.js';
@@ -245,9 +245,8 @@ function CompResults({ comp }) {
 
 const SRC_LABEL = { c: 'Ball-by-ball', w: 'Wikipedia', wc: 'Wikipedia + ball-by-ball' };
 
-function AllTime({ comp }) {
+function AllTime({ comp, view }) {
   const { data, error } = useData(`alltime/${comp.id}.json`);
-  const [view, setView] = useState('batting');
   const [q, setQ] = useState('');
   const [team, setTeam] = useState('');
   const [minM, setMinM] = useState('');
@@ -259,7 +258,7 @@ function AllTime({ comp }) {
     return data.filter((r) => (!team || r.t.includes(team))
       && (!terms.length || terms.every((t) => r.n.toLowerCase().includes(t)))
       && r.m >= min
-      && (view === 'batting' || r.balls > 0 || r.ct || r.st));
+      && (view === 'batting' || (view === 'bowling' ? r.balls > 0 : r.ct || r.st)));
   }, [data, q, team, minM, view]);
 
   if (error) return <p className="notice">All-time figures could not be loaded.</p>;
@@ -288,20 +287,20 @@ function AllTime({ comp }) {
     { key: 'w5', label: '5w', title: 'Five wickets in an innings', get: (r) => r.w5 },
     ...(comp.format === 'Test' ? [{ key: 'w10', label: '10w', title: 'Ten wickets in a match', get: (r) => r.w10 }] : []),
     { key: 'bbi', label: 'BBI', title: 'Best bowling in an innings', get: (r) => bbiValue(r.bbi), render: (r) => r.bbi || '–' },
+    src,
+  ];
+  const fielding = [
+    name, teamC, m,
+    { key: 'dis', label: 'Dis', title: 'Dismissals: catches plus stumpings', get: (r) => (r.ct || 0) + (r.st || 0) },
     { key: 'ct', label: 'Ct', title: 'Catches', get: (r) => r.ct },
     { key: 'st', label: 'St', title: 'Stumpings', get: (r) => r.st },
     src,
   ];
+  const columns = { batting, bowling, fielding }[view];
+  const initialSort = { batting: { key: 'r', desc: true }, bowling: { key: 'wk', desc: true }, fielding: { key: 'dis', desc: true } }[view];
 
   return (
     <>
-      <p className="section-note">
-        Complete careers. Matches before ball-by-ball records began come from players' Wikipedia pages; everything since comes from Cricsheet and is updated daily.
-      </p>
-      <div className="season-picker" role="group" aria-label="Choose a table">
-        <button type="button" className={view === 'batting' ? 'on' : ''} aria-pressed={view === 'batting'} onClick={() => setView('batting')}>Batting</button>
-        <button type="button" className={view === 'bowling' ? 'on' : ''} aria-pressed={view === 'bowling'} onClick={() => setView('bowling')}>Bowling and fielding</button>
-      </div>
       <div className="filters">
         <label><span>Player</span><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter by name" /></label>
         <label>
@@ -316,8 +315,8 @@ function AllTime({ comp }) {
       <DataTable
         key={view}
         rows={rows}
-        columns={view === 'batting' ? batting : bowling}
-        initialSort={view === 'batting' ? { key: 'r', desc: true } : { key: 'wk', desc: true }}
+        columns={columns}
+        initialSort={initialSort}
         noun="players"
         caption={`${comp.name} all-time ${view}`}
         emptyText="No players match these filters."
@@ -330,14 +329,23 @@ export default function Stats() {
   const meta = useMeta();
   const params = useParams();
   const comp = useComp(params.comp);
-  const tabs = comp && comp.alltime ? [['alltime', 'All-time'], ...TABS] : TABS;
+  const tabs = TABS;
   const tab = params.tab || tabs[0][0];
   const navigate = useNavigate();
-  const needsRows = ['batting', 'bowling', 'fielding'].includes(tab);
+  const [search, setSearch] = useSearchParams();
+  const playerTab = ['batting', 'bowling', 'fielding'].includes(tab);
+  // Competitions with Wikipedia careers offer two views of the player tables: whole careers (default),
+  // or only the ball-by-ball era, which has more columns (balls faced, strike rate, 4s, 6s, ...).
+  const hasCareers = !!(comp && comp.alltime);
+  const era = hasCareers && search.get('era') === 'bbb' ? 'bbb' : hasCareers ? 'full' : 'bbb';
+  const needsRows = playerTab && era === 'bbb';
   const { data: rows, error } = useData(comp && needsRows ? `comp/${comp.id}/stats.json` : null);
 
   if (!comp) return <Navigate to={`/stats/${meta.competitions[0].id}`} replace />;
+  if (tab === 'alltime') return <Navigate to={`/stats/${comp.id}/batting`} replace />; // old address
   if (!tabs.some(([t]) => t === tab)) return <Navigate to={`/stats/${comp.id}`} replace />;
+  const since = date(comp.from);
+  const setEra = (e) => { const n = new URLSearchParams(search); if (e === 'bbb') n.set('era', 'bbb'); else n.delete('era'); setSearch(n, { replace: true }); };
 
   return (
     <div className="page stats-page">
@@ -345,7 +353,7 @@ export default function Stats() {
         <div>
           <h1>{comp.name}</h1>
           <p className="muted">
-            {tab === 'alltime' ? 'Every international career, all-time'
+            {playerTab && era === 'full' ? 'Complete careers, every era'
               : comp.histMatches && ['records', 'teams', 'results'].includes(tab) ? `${num(comp.matches + comp.histMatches)} matches, ${date(comp.firstMatch)} to ${date(comp.to)}`
                 : `${num(comp.matches)} matches with ball-by-ball data, ${date(comp.from)} to ${date(comp.to)}`}
           </p>
@@ -354,11 +362,24 @@ export default function Stats() {
       </div>
       <nav className="tabs" aria-label={`${comp.name} sections`}>
         {tabs.map(([t, label]) => (
-          <NavLink key={t} to={`/stats/${comp.id}/${t}`} className={t === tab ? 'active' : ''} end>{label}</NavLink>
+          <NavLink key={t} to={`/stats/${comp.id}/${t}${playerTab && ['batting', 'bowling', 'fielding'].includes(t) && era === 'bbb' && hasCareers ? '?era=bbb' : ''}`} className={t === tab ? 'active' : ''} end>{label}</NavLink>
         ))}
       </nav>
       <div className="tab-body">
-        {tab === 'alltime' && <AllTime comp={comp} />}
+        {playerTab && hasCareers && (
+          <div className="era-switch">
+            <div className="season-picker" role="group" aria-label="Which matches">
+              <button type="button" className={era === 'full' ? 'on' : ''} aria-pressed={era === 'full'} onClick={() => setEra('full')}>Whole careers</button>
+              <button type="button" className={era === 'bbb' ? 'on' : ''} aria-pressed={era === 'bbb'} onClick={() => setEra('bbb')}>Since {since.replace(/^\d+ \w+ /, '')}, in detail</button>
+            </div>
+            <p className="section-note">
+              {era === 'full'
+                ? <>Every match of every career. Older matches come from players' Wikipedia pages, newer ones from ball-by-ball data, updated daily.</>
+                : <>Only matches since {since}, when ball-by-ball records begin. That adds balls faced, strike rates, 4s and 6s, but players from earlier years show only part of their careers.</>}
+            </p>
+          </div>
+        )}
+        {playerTab && era === 'full' && <AllTime comp={comp} view={tab} />}
         {needsRows && (error ? <p className="notice">The {tab} table could not be loaded.</p>
           : !rows ? <p className="loading">Loading {tab}…</p>
             : <PlayerTable comp={comp} rows={rows} kind={tab} />)}
