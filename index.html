@@ -6,6 +6,10 @@
     <title>CricStats: cricket records and player stats</title>
     <meta name="description" content="Career stats, leaderboards, records and scorecards for international cricket and the major T20 leagues, updated daily from ball-by-ball data." />
     <meta name="theme-color" content="#ffffff" />
+    <script>
+      // Apply a theme chosen with the theme button before the page draws (no flash of the wrong theme).
+      try { var t = localStorage.getItem('cricstats.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+    </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
