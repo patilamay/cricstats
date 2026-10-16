@@ -25,11 +25,12 @@ const toRow = (conversationId, item) => ({
   columns: item.columns || null,
   kinds: item.kinds || null,
   rows: item.rows ? item.rows.slice(0, ROWS_SAVED) : null,
+  followups: Array.isArray(item.followups) && item.followups.length ? item.followups.slice(0, 3) : null,
 });
 
 const fromRow = (r) => ({
   question: r.question, standalone: r.standalone, sql: r.sql, note: r.note, answer: r.answer,
-  error: r.error, cannot: r.cannot, columns: r.columns, kinds: r.kinds, rows: r.rows, saved: true,
+  error: r.error, cannot: r.cannot, columns: r.columns, kinds: r.kinds, rows: r.rows, followups: r.followups || [], saved: true,
 });
 
 export async function listConversations() {
@@ -53,7 +54,15 @@ export async function saveTurns(conversationId, items) {
     const conv = check(await sb.from('conversations').insert({ title: titleOf(items[0]) }).select('id').single());
     id = conv.id;
   }
-  if (items.length) check(await sb.from('turns').insert(items.map((it) => toRow(id, it))));
+  if (items.length) {
+    const rows = items.map((it) => toRow(id, it));
+    let res = await sb.from('turns').insert(rows);
+    // Databases set up before follow-ups were saved don't have the column yet: save without it.
+    if (res.error && /followups/i.test(res.error.message || '')) {
+      res = await sb.from('turns').insert(rows.map(({ followups, ...rest }) => rest)); // eslint-disable-line no-unused-vars
+    }
+    check(res);
+  }
   return id;
 }
 
