@@ -19,6 +19,7 @@ import { COMPETITIONS, CRICSHEET_BASE } from './competitions.js';
 import { parseMatch } from './parse.js';
 import { CompetitionAggregator } from './aggregate.js';
 import { buildLeaders } from './leaders.js';
+import { writeResultYears } from './results-index.js';
 import { commonsPath, fetchWikiCareers, parseRegister, photoCredits } from './wiki.js';
 import { WIKI_FORMAT, combine } from './careers.js';
 import { Exporter } from './export.js';
@@ -405,6 +406,10 @@ async function main() {
   }
   writeJson(path.join(tmpOut, 'players', 'index.json'), index);
   for (const [sh, data] of shards) writeJson(path.join(tmpOut, 'players', `${sh}.json`), data);
+
+  // Results page: every competition's results, one file per year.
+  const resultYears = writeResultYears(tmpOut, compMeta.map((c) => c.id));
+  log(`results by year: ${resultYears.length} years, latest ${resultYears[0] ? resultYears[0].join(': ') : 'none'}`);
 
   // Leader boards carry each player's photo, so the home page needn't load player files.
   for (const boards of Object.values(leaders)) {
