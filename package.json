@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "data": "node pipeline/build.js",
     "data:sample": "node pipeline/sample/make-sample.js .cache/sample && node pipeline/build.js --local .cache/sample --wiki-local .cache/sample/_wiki --history-local .cache/sample/_wiki/history.json",
-    "test": "node --test pipeline/test/parse.test.js pipeline/test/infobox.test.js pipeline/test/careers.test.js pipeline/test/matchbox.test.js pipeline/test/photos.test.js worker/test/worker.test.js supabase/test/schema.test.js",
+    "test": "node --test pipeline/test/parse.test.js pipeline/test/infobox.test.js pipeline/test/careers.test.js pipeline/test/matchbox.test.js pipeline/test/photos.test.js pipeline/test/results-index.test.js worker/test/worker.test.js supabase/test/schema.test.js",
     "db": "node pipeline/build.js --export .cache/export && python3 pipeline/make_db.py .cache/export db"
   },
   "engines": {

@@ -48,8 +48,17 @@ export default function Header() {
   const section = SECTIONS.find(([path]) => pathname === path || pathname.startsWith(`${path}/`))?.[1] || null;
   // Close the menu whenever the page changes (links, back button, search results).
   useEffect(() => { setOpen(false); }, [pathname]);
+  // Lets sticky things below (like the Results day headings) sit just under the header.
+  const headerRef = useRef(null);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el || typeof ResizeObserver !== 'function') return undefined;
+    const ro = new ResizeObserver(() => document.documentElement.style.setProperty('--header-h', `${el.offsetHeight}px`));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   return (
-    <header className="site-header">
+    <header className="site-header" ref={headerRef}>
       <a className="skip" href="#main">Skip to content</a>
       <div className="header-inner">
         <Link to="/" className="wordmark" onClick={close}>
