@@ -729,3 +729,12 @@ h1 .flag, h2 .flag { width: 1em; height: 0.75em; vertical-align: 0.02em; }
 }
 .res-controls select, .res-controls input { height: 2.6rem; box-sizing: border-box; }
 .res-item:hover { background: color-mix(in srgb, var(--surface) 60%, transparent); }
+
+/* Back to top --------------------------------------------------------- */
+.to-top { position: fixed; right: 1rem; bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); z-index: 35; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.6rem 0.95rem 0.6rem 0.8rem; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 600 0.9rem/1 var(--body); box-shadow: var(--shadow); cursor: pointer; opacity: 0; transform: translateY(0.75rem); pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
+.to-top.show { opacity: 1; transform: none; pointer-events: auto; }
+.to-top:hover, .to-top:focus-visible { border-color: var(--coral); color: var(--coral-ink); }
+.to-top:focus-visible { outline: 2px solid color-mix(in srgb, var(--coral) 45%, transparent); outline-offset: 2px; }
+.to-top svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@media (min-width: 720px) { .to-top { right: 1.5rem; bottom: 1.5rem; } }
+@media (prefers-reduced-motion: reduce) { .to-top { transition: none; } }
