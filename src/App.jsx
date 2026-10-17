@@ -13,6 +13,7 @@ import Players from './pages/Players.jsx';
 import Glossary from './pages/Glossary.jsx';
 import About from './pages/About.jsx';
 import NotFound from './pages/NotFound.jsx';
+import BackToTop from './components/BackToTop.jsx';
 import { lazy, Suspense } from 'react';
 
 const Ask = lazy(() => import('./pages/Ask.jsx'));
@@ -63,6 +64,7 @@ export default function App() {
           </Routes>
         )}
       </main>
+      <BackToTop />
       <Footer />
     </MetaContext.Provider>
     </AuthProvider>
