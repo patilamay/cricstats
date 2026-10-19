@@ -1,70 +1,29 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useMeta } from '../App.jsx';
 import { load, useData } from '../data.js';
-import { score } from '../format.js';
-import { Team } from '../components/Bits.jsx';
 import Combobox from '../components/Combobox.jsx';
+import { ResultItem, ResultsTabs, dayLabel } from '../components/ResultItem.jsx';
 
-// Results: one list, newest first, grouped by day. Filters live in the address so a view can be
-// shared: ?g=<group> &c=<competition> &series=<name> &team=<name> &y=<year>.
+// Results → Latest: every match, newest first, grouped by day. No filter is applied unless the
+// visitor picks it; picked filters show as removable chips. Filters live in the address:
+// ?g=<group> &c=<competition> &team=<name> &y=<year>.
 // Data: results/years.json + results/<year>.json (every competition); falls back to recent.json.
+// Without a year, the newest year loads first and older years load as you ask for more.
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const STEP = 150;
+const STEP = 120;
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const norm = (s) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
-
-const isoDay = (d) => d.toISOString().slice(0, 10);
-function dayLabel(iso) {
-  const today = new Date();
-  if (iso === isoDay(today)) return 'Today';
-  const y = new Date(today); y.setDate(y.getDate() - 1);
-  if (iso === isoDay(y)) return 'Yesterday';
-  const [yy, mm, dd] = iso.split('-').map(Number);
-  const dow = DAYS[new Date(Date.UTC(yy, mm - 1, dd)).getUTCDay()];
-  return `${dow} ${dd} ${MONTHS[mm - 1].slice(0, 3)}${yy === today.getFullYear() ? '' : ` ${yy}`}`;
-}
-
-function compTag(c) {
-  if (!c) return '';
-  const intlWomen = c.gender === 'female' && /international/i.test(c.group) && !/\bW\b/.test(c.short);
-  return intlWomen ? `${c.short} W` : c.short;
-}
-
-function ResultItem({ m, comp, showComp }) {
-  const byTeam = (team) => m.scores.filter((s) => s.team === team && !s.so).map(score).join(' & ');
-  const where = m.venue ? (m.city && !m.venue.includes(m.city) ? `${m.venue}, ${m.city}` : m.venue) : m.city;
-  return (
-    <li className="res-item">
-      <div className="res-meta">
-        {showComp && comp && <span className={`res-tag res-tag-${comp.gender === 'female' ? 'w' : 'm'}`} title={comp.name}>{compTag(comp)}</span>}
-        <span className="res-where">{[m.event, m.stage, where].filter(Boolean).join(' · ')}</span>
-      </div>
-      <div className="res-teams">
-        {m.teams.map((t) => (
-          <div key={t} className={`res-team${m.winner === t ? ' won' : ''}`}>
-            <span className="res-name"><Team name={t} /></span>
-            <span className="res-score">{byTeam(t) || '–'}</span>
-          </div>
-        ))}
-      </div>
-      <div className="res-result">
-        <span>{m.result}</span>
-        <Link to={`/match/${m.id}`} className="res-card" aria-label={`Scorecard: ${m.teams.join(' v ')}`}>Scorecard</Link>
-      </div>
-    </li>
-  );
-}
 
 export default function Results() {
   const meta = useMeta();
   const [params, setParams] = useSearchParams();
   const g = params.get('g') || '';
   const c = params.get('c') || '';
-  const series = params.get('series') || '';
   const team = params.get('team') || '';
+  const y = params.get('y') || '';
+  const oldSeries = params.get('series'); // old links: series moved to its own tab
 
   const set = (patch) => {
     const n = new URLSearchParams(params);
@@ -77,19 +36,18 @@ export default function Results() {
   const groups = useMemo(() => [...new Set(comps.map((x) => x.group))].map((name) => ({ name, key: slug(name) })), [comps]);
   const groupOf = (id) => (compById[id] ? slug(compById[id].group) : '');
 
-  // Years available; the list starts at the chosen (or latest) year and can load older ones.
   const { data: years, error: yearsError } = useData('results/years.json');
   const byYear = !!years && !yearsError;
-  const latest = byYear && years.length ? String(years[0][0]) : null;
-  const y = params.get('y') || latest;
+
+  // Which year files are loaded: the chosen year only, or (any year) the newest plus as many older as asked for.
   const [extra, setExtra] = useState(0);
   useEffect(() => { setExtra(0); }, [y]);
   const loadedYears = useMemo(() => {
-    if (!byYear || !y) return [];
-    const i = years.findIndex(([yy]) => String(yy) === y);
-    return i < 0 ? [] : years.slice(i, i + 1 + extra).map(([yy]) => String(yy));
+    if (!byYear || !years.length) return [];
+    if (y) return years.some(([yy]) => String(yy) === y) ? [y] : [];
+    return years.slice(0, 1 + extra).map(([yy]) => String(yy));
   }, [byYear, years, y, extra]);
-  const olderYear = byYear && y ? (() => { const i = years.findIndex(([yy]) => String(yy) === y); return years[i + 1 + extra] ? String(years[i + 1 + extra][0]) : null; })() : null;
+  const olderYear = byYear && !y && years[loadedYears.length] ? String(years[loadedYears.length][0]) : null;
 
   const [matches, setMatches] = useState(null);
   const [loadError, setLoadError] = useState(null);
@@ -106,29 +64,26 @@ export default function Results() {
     return () => { live = false; };
   }, [yearsError, loadedYears]);
 
-  // Filters: competition (group or single), then team, then series.
   const byComp = useMemo(() => (matches || []).filter((m) => (c ? m.c === c : !g || groupOf(m.c) === g)), [matches, g, c, compById]);
-  const byTeam = useMemo(() => {
+  const shown = useMemo(() => {
     const q = norm(team);
     return q ? byComp.filter((m) => m.teams.some((t) => norm(t).includes(q))) : byComp;
   }, [byComp, team]);
-  const seriesList = useMemo(() => {
-    const seen = new Map();
-    for (const m of byTeam) if (m.event && !seen.has(m.event)) seen.set(m.event, 0);
-    for (const m of byTeam) if (m.event) seen.set(m.event, seen.get(m.event) + 1);
-    return [...seen.entries()];
-  }, [byTeam]);
-  const shown = useMemo(() => (series ? byTeam.filter((m) => m.event === series) : byTeam), [byTeam, series]);
   const teamOptions = useMemo(() => {
     const n = new Map();
     for (const m of byComp) for (const t of m.teams) n.set(t, (n.get(t) || 0) + 1);
-    return [...n.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([t, k]) => ({ value: t, label: t, count: k }));
+    return [...n.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([t]) => ({ value: t, label: t }));
   }, [byComp]);
 
   const [limit, setLimit] = useState(STEP);
-  useEffect(() => { setLimit(STEP); }, [g, c, team, series, y]);
+  useEffect(() => { setLimit(STEP); }, [g, c, team, y]);
 
-  // Group the visible matches by day, and note where each month starts (for the month jump).
+  // With a team filter there may be only a handful of matches per year: keep loading older years
+  // (up to a few at a time) until there's a screenful, so "India" doesn't look empty early in a year.
+  useEffect(() => {
+    if (matches && team && !y && olderYear && shown.length < 30 && extra < 6) setExtra((e) => e + 1);
+  }, [matches, team, y, olderYear, shown.length, extra]);
+
   const visible = shown.slice(0, limit);
   const days = [];
   for (const m of visible) {
@@ -136,10 +91,12 @@ export default function Results() {
     if (last && last.date === m.date) last.items.push(m); else days.push({ date: m.date, items: [m] });
   }
   const months = [];
-  for (const m of shown) {
-    const k = m.date.slice(0, 7);
-    const last = months[months.length - 1];
-    if (last && last.key === k) last.n += 1; else months.push({ key: k, n: 1, first: m.date });
+  if (y) {
+    for (const m of shown) {
+      const k = m.date.slice(0, 7);
+      const last = months[months.length - 1];
+      if (last && last.key === k) last.n += 1; else months.push({ key: k, n: 1, first: m.date });
+    }
   }
   const jumpTo = (key) => {
     const mo = months.find((x) => x.key === key);
@@ -152,45 +109,49 @@ export default function Results() {
     }));
   };
 
+  if (oldSeries) return <Navigate to={`/series?q=${encodeURIComponent(oldSeries)}`} replace />;
+
   const groupComps = g ? comps.filter((x) => slug(x.group) === g) : [];
-  const anyFilter = g || c || team || series || (params.get('y') && params.get('y') !== latest);
   const loading = !matches && !loadError;
-  const showComp = !c;
+  const span = loadedYears.length > 1 ? `${loadedYears[loadedYears.length - 1]}–${loadedYears[0]}` : loadedYears[0];
+  const applied = [
+    g && !c && { k: 'g', label: groups.find((x) => x.key === g)?.name, clear: { g: '', c: '' } },
+    c && { k: 'c', label: compById[c]?.name || c, clear: { c: '' } },
+    team && { k: 'team', label: `Team: ${team}`, clear: { team: '' } },
+    y && { k: 'y', label: `Year: ${y}`, clear: { y: '' } },
+  ].filter(Boolean);
+  const more = () => (shown.length > limit ? setLimit(limit + STEP * 2) : setExtra(extra + 1));
+  const canMore = shown.length > limit || !!olderYear;
 
   return (
     <div className="page results-page">
       <h1>Results</h1>
+      <ResultsTabs />
 
       <div className="res-filters">
         <div className="chip-row" role="group" aria-label="Competitions">
-          <button type="button" className={!g ? 'on' : ''} aria-pressed={!g} onClick={() => set({ g: '', c: '', series: '' })}>All</button>
+          <button type="button" className={!g ? 'on' : ''} aria-pressed={!g} onClick={() => set({ g: '', c: '' })}>All</button>
           {groups.map((x) => (
-            <button key={x.key} type="button" className={g === x.key ? 'on' : ''} aria-pressed={g === x.key} onClick={() => set({ g: x.key, c: '', series: '' })}>{x.name}</button>
+            <button key={x.key} type="button" className={g === x.key ? 'on' : ''} aria-pressed={g === x.key} onClick={() => set({ g: x.key, c: '' })}>{x.name}</button>
           ))}
         </div>
         <div className="res-controls filters">
           {g && (
             <label><span>Competition</span>
-              <select value={c} onChange={(e) => set({ c: e.target.value, series: '' })}>
+              <select value={c} onChange={(e) => set({ c: e.target.value })}>
                 <option value="">All {groups.find((x) => x.key === g)?.name.toLowerCase()}</option>
                 {groupComps.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
               </select>
             </label>
           )}
           <Combobox
-            label="Series" value={series} onChange={(v) => set({ series: v })}
-            options={seriesList.map(([x, k]) => ({ value: x, label: x, count: k }))}
-            allLabel={`All Series (${seriesList.length})`}
-            placeholder={seriesList.length ? `All Series (${seriesList.length})` : 'No named Series'}
-            disabled={!seriesList.length && !series} emptyText="No Series match"
-          />
-          <Combobox
-            label="Team" value={team} onChange={(v) => set({ team: v, series: '' })}
+            label="Team" value={team} onChange={(v) => set({ team: v })}
             options={teamOptions} allLabel="All teams" placeholder="All teams" freeText flags emptyText="No teams match"
           />
           {byYear && (
             <label className="narrow"><span>Year</span>
-              <select value={y || ''} onChange={(e) => set({ y: e.target.value === latest ? '' : e.target.value, series: '' })}>
+              <select value={y} onChange={(e) => set({ y: e.target.value })}>
+                <option value="">Any year</option>
                 {years.map(([yy, n]) => <option key={yy} value={String(yy)}>{yy} ({n.toLocaleString('en-GB')})</option>)}
               </select>
             </label>
@@ -204,39 +165,48 @@ export default function Results() {
             </label>
           )}
         </div>
-        <p className="res-summary muted" aria-live="polite">
-          {loading ? 'Loading…' : `${shown.length.toLocaleString('en-GB')} ${shown.length === 1 ? 'match' : 'matches'}${byYear && y ? ` in ${loadedYears.length > 1 ? `${loadedYears[loadedYears.length - 1]}–${loadedYears[0]}` : y}` : ''}`}
-          {anyFilter && <button type="button" className="link-btn" onClick={() => setParams(new URLSearchParams(), { replace: true })}>Clear filters</button>}
-        </p>
+        <div className="res-summary" role="status">
+          <span className="muted">
+            {loading ? 'Loading…' : `${shown.length.toLocaleString('en-GB')} ${shown.length === 1 ? 'match' : 'matches'}${byYear && span ? (y ? ` in ${y}` : `, ${span}${olderYear ? ' so far' : ''}`) : ''}`}
+          </span>
+          {applied.map((a) => (
+            <button key={a.k} type="button" className="filter-chip" onClick={() => set(a.clear)} aria-label={`Remove filter ${a.label}`}>
+              {a.label}<span aria-hidden="true">×</span>
+            </button>
+          ))}
+          {applied.length > 1 && <button type="button" className="link-btn" onClick={() => setParams(new URLSearchParams(), { replace: true })}>Clear all</button>}
+        </div>
       </div>
 
       {loadError ? <p className="notice">Results could not be loaded.</p>
         : loading ? <p className="loading">Loading results…</p>
           : !shown.length ? (
-            <p className="notice">No matches here{olderYear ? '' : ''}. {olderYear && <button type="button" className="link-btn" onClick={() => setExtra(extra + 1)}>Look in {olderYear}</button>}</p>
+            <p className="notice">
+              No matches {y ? `in ${y}` : 'yet'} for these filters.{' '}
+              {y ? <button type="button" className="link-btn" onClick={() => set({ y: '' })}>Search every year</button>
+                : olderYear && <button type="button" className="link-btn" onClick={() => setExtra(extra + 1)}>Look further back</button>}
+            </p>
           ) : (
             <div className="res-days">
               {days.map((d) => (
                 <Fragment key={d.date}>
                   <h2 className="res-day" id={`d-${d.date}`}>{dayLabel(d.date)}</h2>
                   <ul className="res-list">
-                    {d.items.map((m) => <ResultItem key={m.id} m={m} comp={compById[m.c]} showComp={showComp} />)}
+                    {d.items.map((m) => <ResultItem key={m.id} m={m} comp={compById[m.c]} showComp={!c} />)}
                   </ul>
                 </Fragment>
               ))}
             </div>
           )}
 
-      {!loading && !loadError && (shown.length > limit || olderYear) && shown.length > 0 && (
+      {!loading && !loadError && shown.length > 0 && (
         <div className="show-more">
-          {shown.length > limit
-            ? <button type="button" onClick={() => setLimit(limit + STEP * 2)}>Show more results</button>
-            : <button type="button" onClick={() => setExtra(extra + 1)}>Load {olderYear} results</button>}
-          {shown.length > limit && <span className="muted">{(shown.length - limit).toLocaleString('en-GB')} more</span>}
+          {canMore && <button type="button" onClick={more}>{shown.length > limit ? 'Show more results' : `Show ${olderYear} results`}</button>}
+          <a href="#main" className="back-top-link" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Back to top</a>
         </div>
       )}
 
-      <p className="muted res-footnote">Cricsheet usually adds matches within a few days of the finish. Older matches come from Wikipedia.</p>
+      <p className="muted res-footnote">Cricsheet usually adds matches within a few days of the finish. Looking for a tour or tournament? Try the <Link to="/series">Series</Link> tab.</p>
     </div>
   );
 }
