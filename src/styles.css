@@ -716,10 +716,11 @@ h1 .flag, h2 .flag { width: 1em; height: 0.75em; vertical-align: 0.02em; }
 .res-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .res-score { flex: none; font-variant-numeric: tabular-nums; }
 .res-team.won .res-score { color: var(--teal-ink); }
-.res-result { grid-area: result; display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 0.92rem; }
+.res-result { grid-area: result; display: flex; align-items: center; justify-content: flex-start; gap: 0.5rem 1.75rem; flex-wrap: wrap; font-size: 0.92rem; }
 .res-card { flex: none; font-weight: 600; font-size: 0.88rem; }
 .res-footnote { font-size: 0.82rem; margin-top: 2rem; }
 @media (max-width: 719px) {
+  .res-result { justify-content: space-between; flex-wrap: nowrap; }
   .res-item { grid-template-columns: 1fr; grid-template-areas: "meta" "teams" "result"; gap: 0.35rem; }
   .res-result { font-size: 0.88rem; color: var(--muted); }
   .res-controls label { flex: 1 1 45%; }
@@ -776,7 +777,6 @@ h1 .flag, h2 .flag { width: 1em; height: 0.75em; vertical-align: 0.02em; }
 .filter-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.55rem 0.3rem 0.75rem; border: 1px solid color-mix(in srgb, var(--coral) 45%, var(--line)); border-radius: 999px; background: var(--coral-soft); color: var(--coral-ink); font: 600 0.85rem/1 var(--body); cursor: pointer; }
 .filter-chip span { font-size: 1rem; line-height: 0.8; }
 .filter-chip:hover { border-color: var(--coral); }
-.back-top-link { margin-left: auto; font-weight: 600; font-size: 0.9rem; }
 .res-series { color: inherit; font-weight: 600; text-decoration: none; }
 .res-series:hover { color: var(--coral-ink); text-decoration: underline; }
 .ser-search { margin-bottom: 0.9rem; }

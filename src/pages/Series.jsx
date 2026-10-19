@@ -128,10 +128,9 @@ function SeriesList() {
             ))
           )}
 
-      {data && rows.length > 0 && (
+      {data && rows.length > limit && (
         <div className="show-more">
-          {rows.length > limit && <button type="button" onClick={() => setLimit(limit + STEP * 2)}>Show more series</button>}
-          <a href="#main" className="back-top-link" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Back to top</a>
+          <button type="button" onClick={() => setLimit(limit + STEP * 2)}>Show more series</button>
         </div>
       )}
       <p className="muted res-footnote">Series are listed from about 2002, when ball-by-ball records begin. Older matches are in the <Link to="/results">Latest</Link> tab by year.</p>
@@ -191,7 +190,6 @@ function SeriesPage({ id }) {
               </ul>
             </Fragment>
           ))}
-          {days.length > 4 && <div className="show-more"><a href="#main" className="back-top-link" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Back to top</a></div>}
         </>
       )}
     </div>

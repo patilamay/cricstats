@@ -199,10 +199,9 @@ export default function Results() {
             </div>
           )}
 
-      {!loading && !loadError && shown.length > 0 && (
+      {!loading && !loadError && shown.length > 0 && canMore && (
         <div className="show-more">
-          {canMore && <button type="button" onClick={more}>{shown.length > limit ? 'Show more results' : `Show ${olderYear} results`}</button>}
-          <a href="#main" className="back-top-link" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Back to top</a>
+          <button type="button" onClick={more}>{shown.length > limit ? 'Show more results' : `Show ${olderYear} results`}</button>
         </div>
       )}
 
