@@ -41,12 +41,14 @@ test('tournaments report the final; qualifiers are not major', () => {
     mk('w2', '2026-03-08', ['India', 'South Africa'], "ICC Men's T20 World Cup", { winner: 'India', stage: 'Final' }),
     mk('w3', '2026-02-11', ['Australia', 'England'], "ICC Men's T20 World Cup"),
     mk('q1', '2026-10-14', ['Nepal', 'Oman'], "ICC Men's T20 World Cup Sub Regional Asia Qualifier B"),
+    mk('r1', '2025-07-01', ['Italy', 'Jersey'], "ICC Men's T20 World Cup Europe Region Final"),
   ];
   const s = buildSeries(list);
   const wc = s.find((x) => x.n === "ICC Men's T20 World Cup");
   assert.equal(wc.r, 'India won the final');
   assert.equal(wc.major, 1);
   assert.equal(s.find((x) => /Qualifier/.test(x.n)).major, 0);
+  assert.equal(s.find((x) => /Region Final/.test(x.n)).major, 0);
   assert.equal(seasonLabel('2026-02-10', '2026-03-08'), '2026');
   assert.equal(summarise([mk('z', '2026-01-01', ['A', 'B'], 'x', { result: 'A won by 3 runs', winner: 'A' })]).text, 'A won by 3 runs');
 });
