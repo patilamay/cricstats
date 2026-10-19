@@ -32,7 +32,7 @@ export default function About() {
         the site combines two sources: each player's career totals from their{' '}
         <a href="https://en.wikipedia.org/">Wikipedia</a> page, as of the date the page gives, plus every match Cricsheet has recorded
         since that date. When Cricsheet covers a player's whole career, its figures are used on their own.
-        These combined figures appear in the All-time tables, the home page leaders and the International career table on player pages.
+        These combined figures appear under "Whole careers" in the Batting, Bowling and Fielding tables, the home page leaders and the International career table on player pages.
       </p>
       <p>
         This also covers matches Cricsheet doesn't publish. Cricsheet withholds a few hundred matches, including many of Afghanistan's
@@ -75,6 +75,17 @@ export default function About() {
         <li>Players are matched across competitions with Cricsheet's player register, so a player's IPL and international careers sit on one page.</li>
       </ul>
       <p>See the <Link to="/glossary">glossary</Link> for what each column means.</p>
+
+      <h2 id="credits">Credits and licences</h2>
+      <ul>
+        <li>Ball-by-ball data from <a href="https://cricsheet.org">Cricsheet</a>, made available under the{' '}
+          <a href="https://opendatacommons.org/licenses/by/1-0/">Open Data Commons Attribution License 1.0</a>.</li>
+        <li>Career totals and older match summaries from <a href="https://en.wikipedia.org/">Wikipedia</a>, under{' '}
+          <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.</li>
+        <li>Player photos from <a href="https://commons.wikimedia.org/">Wikimedia Commons</a>; each photo's author and licence are shown on the player's page.</li>
+        <li>Flags from <a href="https://github.com/lipis/flag-icons">flag-icons</a> (MIT License).</li>
+        <li>The downloadable database is published on <a href="https://github.com/patilamay/cricstats/releases/tag/data">GitHub</a> under the same terms as its sources.</li>
+      </ul>
     </div>
   );
 }

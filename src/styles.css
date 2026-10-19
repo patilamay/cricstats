@@ -827,3 +827,7 @@ details.ask-fine summary::-webkit-details-marker { display: none; }
 details.ask-fine summary::after { content: " ›"; }
 details.ask-fine[open] summary::after { content: " ⌄"; }
 details.ask-fine p { margin: 0.5rem 0 0; line-height: 1.5; }
+.footer-inner { padding-top: 1.1rem; padding-bottom: 1.3rem; }
+.footer-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 1.25rem; max-width: none !important; margin: 0 !important; font-size: 0.85rem; }
+.footer-links { display: inline-flex; gap: 1rem; margin-left: auto; }
+@media (max-width: 719px) { .footer-links { margin-left: 0; } }
