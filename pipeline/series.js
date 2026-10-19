@@ -14,7 +14,7 @@ const DAY = 86400000;
 export const FULL_MEMBERS = new Set(['Afghanistan', 'Australia', 'Bangladesh', 'England', 'India', 'Ireland',
   'New Zealand', 'Pakistan', 'South Africa', 'Sri Lanka', 'West Indies', 'Zimbabwe']);
 const baseTeam = (t) => String(t || '').replace(/\s+Women$/i, '');
-const MINOR_EVENT = /qualif|sub[- ]?regional|regional final|challenge league|league 2\b|cwc league|division|pathway|emerging|\bA tour\b|\bA team\b|under[- ]?19|u19|associate/i;
+const MINOR_EVENT = /qualif|sub[- ]?regional|\bregion(al)? final|challenge league|league 2\b|cwc league|division|pathway|emerging|\bA tour\b|\bA team\b|under[- ]?19|u19|associate/i;
 
 const days = (a, b) => (Date.parse(b) - Date.parse(a)) / DAY;
 const slug = (s) => s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
