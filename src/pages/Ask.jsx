@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ask, askEnabled, historyFrom, runExample } from '../ask/client.js';
 import { deleteConversation, listConversations, loadConversation, renameConversation, saveTurns } from '../ask/store.js';
@@ -8,6 +8,35 @@ import { engineReady } from '../ask/engine.js';
 import PitchLoader, { themeOf } from '../components/PitchLoader.jsx';
 import { Team } from '../components/Bits.jsx';
 import { flagCode } from '../flags.js';
+import { useData } from '../data.js';
+
+// Start screen: a few ideas at a time, mixing instant examples (answered from stored queries),
+// other good questions, and one about the latest big match.
+const EXTRA_IDEAS = [
+  'Most ODI wickets for Australia',
+  'Highest individual scores in Test cricket',
+  'Most sixes in a single T20I innings',
+  'Most IPL runs for Mumbai Indians',
+  'Most catches by a fielder in ODIs',
+  'Best bowling figures in the IPL',
+  'Most T20I wickets in 2025',
+  "Most runs in women's ODIs",
+];
+const IDEAS = [
+  ...EXAMPLES.filter((e) => !/Lord/i.test(e.q)).map((e) => ({ q: e.q, ex: e })),
+  ...EXTRA_IDEAS.map((q) => ({ q })),
+];
+const MAJOR = new Set(['Afghanistan', 'Australia', 'Bangladesh', 'England', 'India', 'Ireland', 'New Zealand', 'Pakistan', 'South Africa', 'Sri Lanka', 'West Indies', 'Zimbabwe']);
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function latestIdea(recent) {
+  const m = (recent || []).find((x) => x.teams && x.teams.length === 2 && x.teams.every((t) => MAJOR.has(t.replace(/ Women$/, ''))));
+  if (!m) return null;
+  const [, mm, dd] = m.date.split('-').map(Number);
+  return { q: `Top scorers in ${m.teams[0]} v ${m.teams[1]} on ${dd} ${MON[mm - 1]} ${m.date.slice(0, 4)}`, fresh: true };
+}
+const shuffle = (arr) => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const stillMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})/;
@@ -293,6 +322,23 @@ export default function Ask() {
     } catch (err) { setSaveError(err.message); }
   };
 
+  // Start-screen ideas (three at a time, reshuffled on demand) and a placeholder that cycles
+  // through example questions until the visitor starts typing.
+  const { data: recent } = useData(started ? null : 'recent.json');
+  const [seed, setSeed] = useState(0);
+  const ideas = useMemo(() => {
+    const fresh = latestIdea(recent);
+    const picks = shuffle(IDEAS).slice(0, fresh ? 2 : 3);
+    return fresh && seed % 2 === 0 ? [fresh, ...picks] : shuffle(IDEAS).slice(0, 3);
+  }, [recent, seed]);
+  const [hint, setHint] = useState(0);
+  useEffect(() => {
+    if (started || q || stillMotion()) return undefined;
+    const t = setInterval(() => setHint((h) => h + 1), 3500);
+    return () => clearInterval(t);
+  }, [started, q]);
+  const hintText = IDEAS[hint % IDEAS.length].q;
+
   const wantsSaved = params.get('c');
   const last = thread[thread.length - 1];
   const suggestions = ((last && last.followups && last.followups.length ? last.followups : FOLLOW_UPS))
@@ -302,10 +348,12 @@ export default function Ask() {
       <label htmlFor="ask-input" className="visually-hidden">{started ? 'Ask a follow-up' : 'Your question'}</label>
       <input
         id="ask-input" ref={inputRef} type="search" value={q} onChange={(e) => setQ(e.target.value)}
-        placeholder={started ? 'Ask a follow-up, e.g. “what about 2023?”' : 'Who scored the most T20I runs in 2024?'}
+        placeholder={started ? 'Ask a follow-up, e.g. “what about 2023?”' : hintText}
         maxLength={300} autoFocus autoComplete="off" disabled={!enabled && started}
       />
-      <button type="submit" disabled={!q.trim() || !!stage || !enabled}>Ask</button>
+      <button type="submit" disabled={!q.trim() || !!stage || !enabled} aria-label="Ask">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 15.5V4.5M4.8 9.7 10 4.5l5.2 5.2" /></svg>
+      </button>
     </form>
   );
 
@@ -332,13 +380,13 @@ export default function Ask() {
       {panelOpen && <button type="button" className="ask-scrim" aria-label="Close conversations" onClick={() => setPanelOpen(false)} />}
       <div className="ask-main">
         <div className="ask-head">
-          <h1>Ask CricStats</h1>
+          {started ? <h1>Ask CricStats</h1> : <span className="ask-eyebrow">Ask CricStats</span>}
           <div className="ask-head-tools">
             {sidebar && <button type="button" className="ask-new ask-side-toggle" onClick={() => setPanelOpen(true)}>Your conversations</button>}
             {started && <button type="button" className="ask-new" onClick={restart} disabled={!!stage}>New conversation</button>}
           </div>
         </div>
-        {!started && <p className="muted ask-sub">Ask about players, teams, matches and records, then ask follow-ups. Answers are worked out from the data on this site.</p>}
+        {!started && <h1 className="ask-title">What do you want to know?</h1>}
 
         {accounts && ready && !signedIn && wantsSaved && !started && (
           <p className="notice">This is a saved conversation. <button type="button" className="linkish" onClick={signInAndKeep}>Sign in with Google</button> to open it.</p>
@@ -349,10 +397,16 @@ export default function Ask() {
         {!enabled && <p className="ask-off">Typed questions aren't switched on yet. The example questions below work now.</p>}
 
         {!started && (
-          <div className="ask-examples" role="group" aria-label="Example questions">
-            {EXAMPLES.slice(0, 6).map((ex) => (
-              <button key={ex.q} type="button" disabled={!!stage} onClick={() => go(ex.q, ex, true)}>{ex.q}</button>
+          <div className="ask-ideas" role="group" aria-label="Ideas to try">
+            <span className="ask-ideas-label">Try</span>
+            {ideas.map((it) => (
+              <button key={it.q} type="button" className={it.fresh ? 'fresh' : ''} disabled={!!stage || (!it.ex && !enabled)} onClick={() => go(it.q, it.ex, true)}>
+                {it.fresh && <span className="ask-fresh-dot" aria-hidden="true" />}{it.q}
+              </button>
             ))}
+            <button type="button" className="ask-shuffle" onClick={() => setSeed((n) => n + 1)} aria-label="Show other ideas" title="Other ideas">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15.5 7.5A6 6 0 0 0 4.6 6.2M4.5 12.5a6 6 0 0 0 10.9 1.3M4.3 3.2v3.3h3.3M15.7 16.8v-3.3h-3.3" /></svg>
+            </button>
           </div>
         )}
 
@@ -383,11 +437,14 @@ export default function Ask() {
           </div>
         )}
 
-        <p className="muted ask-fine">
-          Typed questions are turned into a database query by an AI model (Claude), then run in your browser against this site's data.
-          The model can misread a question, so check the "How this was counted" line if a number looks off.
-          {accounts && <> Signed-in users' conversations are saved to their account; see <Link to="/privacy">Privacy</Link>.</>}
-        </p>
+        <details className="ask-fine">
+          <summary>Answers are worked out by AI from this site's data. How it works</summary>
+          <p>
+            Your question is turned into a database query by an AI model (Claude), then run in your browser against this site's data.
+            The model can misread a question, so check the "How this was counted" line if a number looks off.
+            {accounts && <> Signed-in users' conversations are saved to their account; see <Link to="/privacy">Privacy</Link>.</>}
+          </p>
+        </details>
       </div>
     </div>
   );
