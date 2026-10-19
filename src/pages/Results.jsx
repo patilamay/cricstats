@@ -4,6 +4,7 @@ import { useMeta } from '../App.jsx';
 import { load, useData } from '../data.js';
 import { score } from '../format.js';
 import { Team } from '../components/Bits.jsx';
+import Combobox from '../components/Combobox.jsx';
 
 // Results: one list, newest first, grouped by day. Filters live in the address so a view can be
 // shared: ?g=<group> &c=<competition> &series=<name> &team=<name> &y=<year>.
@@ -64,8 +65,6 @@ export default function Results() {
   const c = params.get('c') || '';
   const series = params.get('series') || '';
   const team = params.get('team') || '';
-  const [teamInput, setTeamInput] = useState(team);
-  useEffect(() => { setTeamInput(team); }, [team]);
 
   const set = (patch) => {
     const n = new URLSearchParams(params);
@@ -123,7 +122,7 @@ export default function Results() {
   const teamOptions = useMemo(() => {
     const n = new Map();
     for (const m of byComp) for (const t of m.teams) n.set(t, (n.get(t) || 0) + 1);
-    return [...n.entries()].sort((a, b) => b[1] - a[1]).slice(0, 300).map(([t]) => t);
+    return [...n.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([t, k]) => ({ value: t, label: t, count: k }));
   }, [byComp]);
 
   const [limit, setLimit] = useState(STEP);
@@ -178,20 +177,17 @@ export default function Results() {
               </select>
             </label>
           )}
-          <label><span>Series</span>
-            <select value={series} onChange={(e) => set({ series: e.target.value })} disabled={!seriesList.length && !series}>
-              <option value="">{seriesList.length ? `All series (${seriesList.length})` : 'No named series'}</option>
-              {series && !seriesList.some(([s]) => s === series) && <option value={series}>{series}</option>}
-              {seriesList.map(([s, n]) => <option key={s} value={s}>{s} ({n})</option>)}
-            </select>
-          </label>
-          <label className="res-team-filter"><span>Team</span>
-            <input type="search" list="res-teams" value={teamInput} placeholder="e.g. India"
-              onChange={(e) => { setTeamInput(e.target.value); if (!e.target.value) set({ team: '', series: '' }); }}
-              onKeyDown={(e) => { if (e.key === 'Enter') set({ team: teamInput.trim(), series: '' }); }}
-              onBlur={() => { if (teamInput.trim() !== team) set({ team: teamInput.trim(), series: '' }); }} />
-            <datalist id="res-teams">{teamOptions.map((t) => <option key={t} value={t} />)}</datalist>
-          </label>
+          <Combobox
+            label="Series" value={series} onChange={(v) => set({ series: v })}
+            options={seriesList.map(([x, k]) => ({ value: x, label: x, count: k }))}
+            allLabel={`All Series (${seriesList.length})`}
+            placeholder={seriesList.length ? `All Series (${seriesList.length})` : 'No named Series'}
+            disabled={!seriesList.length && !series} emptyText="No Series match"
+          />
+          <Combobox
+            label="Team" value={team} onChange={(v) => set({ team: v, series: '' })}
+            options={teamOptions} allLabel="All teams" placeholder="All teams" freeText flags emptyText="No teams match"
+          />
           {byYear && (
             <label className="narrow"><span>Year</span>
               <select value={y || ''} onChange={(e) => set({ y: e.target.value === latest ? '' : e.target.value, series: '' })}>
@@ -210,7 +206,7 @@ export default function Results() {
         </div>
         <p className="res-summary muted" aria-live="polite">
           {loading ? 'Loading…' : `${shown.length.toLocaleString('en-GB')} ${shown.length === 1 ? 'match' : 'matches'}${byYear && y ? ` in ${loadedYears.length > 1 ? `${loadedYears[loadedYears.length - 1]}–${loadedYears[0]}` : y}` : ''}`}
-          {anyFilter && <button type="button" className="link-btn" onClick={() => { setTeamInput(''); setParams(new URLSearchParams(), { replace: true }); }}>Clear filters</button>}
+          {anyFilter && <button type="button" className="link-btn" onClick={() => setParams(new URLSearchParams(), { replace: true })}>Clear filters</button>}
         </p>
       </div>
 
