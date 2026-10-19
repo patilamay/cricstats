@@ -738,3 +738,34 @@ h1 .flag, h2 .flag { width: 1em; height: 0.75em; vertical-align: 0.02em; }
 .to-top svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 @media (min-width: 720px) { .to-top { right: 1.5rem; bottom: 1.5rem; } }
 @media (prefers-reduced-motion: reduce) { .to-top { transition: none; } }
+
+/* Searchable dropdown (Series, Team) ------------------------------------ */
+.combo { position: relative; display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+.combo > label { font-size: 0.83rem; color: var(--muted); font-weight: 500; }
+.combo-field { position: relative; display: flex; align-items: center; height: 2.6rem; padding: 0 0.6rem 0 0.85rem; gap: 0.4rem; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); }
+.combo-field:focus-within { border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-soft); }
+.combo-field input { flex: 1; min-width: 0; height: 100%; border: 0; padding: 0; background: none; color: var(--ink); font: inherit; font-size: 0.98rem; outline: none; text-overflow: ellipsis; }
+.combo-field input::placeholder { color: var(--muted); opacity: 1; }
+.combo.open .combo-field input::placeholder { opacity: 0.6; }
+.combo-field .flag { margin-right: 0; }
+.combo-caret { flex: none; width: 0.55rem; height: 0.55rem; margin: 0 0.25rem; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: translateY(-25%) rotate(45deg); pointer-events: none; }
+.combo-clear { flex: none; width: 1.6rem; height: 1.6rem; border: 0; border-radius: 50%; background: var(--surface-2); color: var(--muted); font-size: 1.1rem; line-height: 1; cursor: pointer; }
+.combo-clear:hover { color: var(--coral-ink); }
+.combo.disabled { opacity: 0.6; }
+.combo-list { position: absolute; top: calc(100% + 0.35rem); left: 0; z-index: 40; width: max(100%, 20rem); max-width: min(30rem, calc(100vw - 32px)); max-height: 20rem; overflow-y: auto; margin: 0; padding: 0.3rem; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); box-shadow: var(--shadow); overscroll-behavior: contain; }
+.combo-list li { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.65rem; border-radius: 7px; font-size: 0.93rem; color: var(--ink); cursor: pointer; }
+.combo-list li .flag { margin-right: 0; }
+.combo-list li.active { background: var(--surface-2); }
+.combo-list li.all { font-weight: 600; border-bottom: 1px solid var(--line); border-radius: 7px 7px 0 0; margin-bottom: 0.2rem; }
+.combo-list li[aria-selected="true"] { font-weight: 600; }
+.combo-label { flex: 1; min-width: 0; }
+.combo-count { flex: none; color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.combo-tick { flex: none; color: var(--coral-ink); }
+.combo-list .combo-empty { color: var(--muted); cursor: default; }
+.res-controls .combo:first-of-type { width: 19rem; }
+.res-controls .combo + .combo { width: 13rem; }
+@media (max-width: 719px) {
+  .res-controls .combo, .res-controls .combo:first-of-type, .res-controls .combo + .combo { flex: 1 1 100%; width: auto; }
+  .combo-list { width: 100%; max-width: none; }
+}
+.filters .combo-field input, .filters .combo-field input:focus { height: 100%; border: 0; padding: 0; border-radius: 0; background: none; box-shadow: none; }
