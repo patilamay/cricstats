@@ -9,6 +9,7 @@ import Stats from './pages/Stats.jsx';
 import Player from './pages/Player.jsx';
 import Match from './pages/Match.jsx';
 import Results from './pages/Results.jsx';
+import Series from './pages/Series.jsx';
 import Players from './pages/Players.jsx';
 import Glossary from './pages/Glossary.jsx';
 import About from './pages/About.jsx';
@@ -55,6 +56,8 @@ export default function App() {
             <Route path="/players" element={<Players />} />
             <Route path="/player/:id" element={<Player />} />
             <Route path="/results" element={<Results />} />
+            <Route path="/series" element={<Series />} />
+            <Route path="/series/:id" element={<Series />} />
             <Route path="/match/:id" element={<Match />} />
             <Route path="/ask" element={<Suspense fallback={<div className="page"><p className="loading">Loading…</p></div>}><Ask /></Suspense>} />
             <Route path="/privacy" element={<Suspense fallback={<div className="page"><p className="loading">Loading…</p></div>}><Privacy /></Suspense>} />

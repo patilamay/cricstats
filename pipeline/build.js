@@ -408,8 +408,8 @@ async function main() {
   for (const [sh, data] of shards) writeJson(path.join(tmpOut, 'players', `${sh}.json`), data);
 
   // Results page: every competition's results, one file per year.
-  const resultYears = writeResultYears(tmpOut, compMeta.map((c) => c.id));
-  log(`results by year: ${resultYears.length} years, latest ${resultYears[0] ? resultYears[0].join(': ') : 'none'}`);
+  const resultIndex = writeResultYears(tmpOut, compMeta);
+  log(`results by year: ${resultIndex.years.length} years; ${resultIndex.series} series`);
 
   // Leader boards carry each player's photo, so the home page needn't load player files.
   for (const boards of Object.values(leaders)) {

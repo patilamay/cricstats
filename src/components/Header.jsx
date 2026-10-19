@@ -38,7 +38,7 @@ function Account() {
   );
 }
 
-const SECTIONS = [['/ask', 'Ask'], ['/results', 'Results'], ['/stats', 'Stats'], ['/players', 'Players'], ['/player', 'Players'], ['/match', 'Results'], ['/glossary', 'Glossary'], ['/about', 'About'], ['/privacy', 'Privacy']];
+const SECTIONS = [['/ask', 'Ask'], ['/results', 'Results'], ['/series', 'Results'], ['/stats', 'Stats'], ['/players', 'Players'], ['/player', 'Players'], ['/match', 'Results'], ['/glossary', 'Glossary'], ['/about', 'About'], ['/privacy', 'Privacy']];
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -77,7 +77,7 @@ export default function Header() {
         </button>
         <nav id="site-nav" className={open ? 'open' : ''} aria-label="Main">
           <NavLink to="/ask" onClick={close}>Ask</NavLink>
-          <NavLink to="/results" onClick={close}>Results</NavLink>
+          <NavLink to="/results" onClick={close} className={() => (pathname.startsWith('/results') || pathname.startsWith('/series') ? 'active' : '')}>Results</NavLink>
           <NavLink to="/stats/test-m" onClick={close} className={() => (pathname.startsWith('/stats/') ? 'active' : '')}>Stats</NavLink>
           <NavLink to="/players" onClick={close}>Players</NavLink>
           <NavLink to="/glossary" onClick={close}>Glossary</NavLink>

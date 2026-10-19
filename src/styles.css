@@ -769,3 +769,35 @@ h1 .flag, h2 .flag { width: 1em; height: 0.75em; vertical-align: 0.02em; }
   .combo-list { width: 100%; max-width: none; }
 }
 .filters .combo-field input, .filters .combo-field input:focus { height: 100%; border: 0; padding: 0; border-radius: 0; background: none; box-shadow: none; }
+
+/* Results tabs, applied-filter chips, Series list and pages -------------- */
+.res-tabs { margin-bottom: 1.1rem; }
+.res-summary { flex-wrap: wrap; gap: 0.5rem 0.75rem; }
+.filter-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.55rem 0.3rem 0.75rem; border: 1px solid color-mix(in srgb, var(--coral) 45%, var(--line)); border-radius: 999px; background: var(--coral-soft); color: var(--coral-ink); font: 600 0.85rem/1 var(--body); cursor: pointer; }
+.filter-chip span { font-size: 1rem; line-height: 0.8; }
+.filter-chip:hover { border-color: var(--coral); }
+.back-top-link { margin-left: auto; font-weight: 600; font-size: 0.9rem; }
+.res-series { color: inherit; font-weight: 600; text-decoration: none; }
+.res-series:hover { color: var(--coral-ink); text-decoration: underline; }
+.ser-search { margin-bottom: 0.9rem; }
+.ser-search input { width: 100%; max-width: 40rem; height: 3rem; padding: 0 1.1rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 1.02rem; box-shadow: var(--shadow); }
+.ser-search input:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-soft); }
+.filters label.check { flex-direction: row; align-items: center; gap: 0.45rem; align-self: center; margin-top: 1.2rem; font-size: 0.92rem; color: var(--ink); cursor: pointer; }
+.filters label.check input { width: 1.05rem; height: 1.05rem; accent-color: var(--teal-ink); }
+.ser-list { list-style: none; margin: 0 0 1.25rem; padding: 0; }
+.ser-item { display: grid; gap: 0.25rem; padding: 0.85rem 0.25rem; border-bottom: 1px solid var(--line); }
+.ser-name { font: 600 1.05rem/1.3 var(--body); color: var(--ink); text-decoration: none; }
+.ser-name:hover { color: var(--coral-ink); text-decoration: underline; }
+.ser-item.minor .ser-name { font-weight: 500; }
+.ser-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.7rem; font-size: 0.82rem; color: var(--muted); }
+.ser-line { display: flex; flex-wrap: wrap; gap: 0.2rem 1.2rem; font-size: 0.9rem; }
+.ser-teams { color: var(--muted); }
+.ser-result { color: var(--teal-ink); font-weight: 600; }
+.crumbs { margin: 0 0 0.75rem; font-size: 0.92rem; }
+.ser-head { margin-bottom: 1.25rem; }
+.ser-head h1 { margin-bottom: 0.5rem; }
+.ser-teams-line { margin: 0.6rem 0 0.2rem; font-size: 1rem; }
+.ser-headline { font: 600 1.15rem/1.3 var(--display); color: var(--teal-ink); margin: 0.4rem 0; }
+.ser-links a { margin-right: 1rem; }
+.series-page .res-day { text-transform: none; letter-spacing: 0; }
+@media (max-width: 719px) { .filters label.check { margin-top: 0; flex-basis: 100%; } }
